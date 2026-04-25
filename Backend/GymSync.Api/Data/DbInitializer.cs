@@ -1,5 +1,6 @@
 using GymSync.Api.Data;
 using GymSync.Api.Models;
+using GymSync.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymSync.Api.Data;
@@ -17,6 +18,23 @@ public static class DbInitializer
         // Apply pending migrations automatically.
         await db.Database.MigrateAsync();
 
+        // Back-fill UniqueAccessKey for any existing rows that don't have a
+        // proper "GS-" key yet (covers placeholders inserted by the migration).
+        var legacy = await db.Users
+            .Where(u => u.UniqueAccessKey == null
+                        || u.UniqueAccessKey == ""
+                        || u.UniqueAccessKey.StartsWith("TMP-"))
+            .ToListAsync();
+        if (legacy.Count > 0)
+        {
+            foreach (var u in legacy)
+            {
+                u.UniqueAccessKey = await GenerateUniqueKeyAsync(db);
+            }
+            await db.SaveChangesAsync();
+            logger.LogInformation("Back-filled {Count} access keys for legacy users.", legacy.Count);
+        }
+
         if (await db.Users.AnyAsync())
         {
             logger.LogInformation("Database already seeded. Skipping.");
@@ -27,6 +45,7 @@ public static class DbInitializer
         {
             FullName = "Default Admin",
             Email = DefaultAdminEmail,
+            UniqueAccessKey = await GenerateUniqueKeyAsync(db),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(DefaultAdminPassword),
             Role = UserRole.Admin,
             IsActive = true,
@@ -39,8 +58,8 @@ public static class DbInitializer
         var ptPasswordHash = BCrypt.Net.BCrypt.HashPassword("Trainer123!");
         var samplePts = new[]
         {
-            new User { FullName = "Coach Burak Aslan", Email = "burak@gymsync.local", PasswordHash = ptPasswordHash, Role = UserRole.PT, CreatedAt = DateTime.UtcNow },
-            new User { FullName = "Coach Selin Polat", Email = "selin@gymsync.local", PasswordHash = ptPasswordHash, Role = UserRole.PT, CreatedAt = DateTime.UtcNow },
+            new User { FullName = "Coach Burak Aslan", Email = "burak@gymsync.local", UniqueAccessKey = await GenerateUniqueKeyAsync(db), PasswordHash = ptPasswordHash, Role = UserRole.PT, CreatedAt = DateTime.UtcNow },
+            new User { FullName = "Coach Selin Polat", Email = "selin@gymsync.local", UniqueAccessKey = await GenerateUniqueKeyAsync(db), PasswordHash = ptPasswordHash, Role = UserRole.PT, CreatedAt = DateTime.UtcNow },
         };
         db.Users.AddRange(samplePts);
 
@@ -48,20 +67,32 @@ public static class DbInitializer
         var memberPasswordHash = BCrypt.Net.BCrypt.HashPassword("Member123!");
         var sampleMembers = new[]
         {
-            new User { FullName = "Ayşe Yılmaz",   Email = "ayse@gymsync.local",   PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 12, RemainingCredits = 8,  CreatedAt = DateTime.UtcNow },
-            new User { FullName = "Mehmet Demir",  Email = "mehmet@gymsync.local", PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 8,  RemainingCredits = 1,  CreatedAt = DateTime.UtcNow },
-            new User { FullName = "Zeynep Kaya",   Email = "zeynep@gymsync.local", PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 12, RemainingCredits = 0,  CreatedAt = DateTime.UtcNow },
-            new User { FullName = "Ali Çelik",     Email = "ali@gymsync.local",    PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 12, RemainingCredits = 11, CreatedAt = DateTime.UtcNow },
-            new User { FullName = "Elif Şahin",    Email = "elif@gymsync.local",   PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 8,  RemainingCredits = 5,  CreatedAt = DateTime.UtcNow },
+            new User { FullName = "Ayşe Yılmaz",   Email = "ayse@gymsync.local",   UniqueAccessKey = await GenerateUniqueKeyAsync(db), PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 12, RemainingCredits = 8,  CreatedAt = DateTime.UtcNow },
+            new User { FullName = "Mehmet Demir",  Email = "mehmet@gymsync.local", UniqueAccessKey = await GenerateUniqueKeyAsync(db), PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 8,  RemainingCredits = 1,  CreatedAt = DateTime.UtcNow },
+            new User { FullName = "Zeynep Kaya",   Email = "zeynep@gymsync.local", UniqueAccessKey = await GenerateUniqueKeyAsync(db), PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 12, RemainingCredits = 0,  CreatedAt = DateTime.UtcNow },
+            new User { FullName = "Ali Çelik",     Email = "ali@gymsync.local",    UniqueAccessKey = await GenerateUniqueKeyAsync(db), PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 12, RemainingCredits = 11, CreatedAt = DateTime.UtcNow },
+            new User { FullName = "Elif Şahin",    Email = "elif@gymsync.local",   UniqueAccessKey = await GenerateUniqueKeyAsync(db), PasswordHash = memberPasswordHash, Role = UserRole.Member, TotalCredits = 8,  RemainingCredits = 5,  CreatedAt = DateTime.UtcNow },
         };
         db.Users.AddRange(sampleMembers);
 
         await db.SaveChangesAsync();
 
         logger.LogInformation(
-            "Seeded default admin user: {Email} (password: {Password}). Change this in production!",
-            DefaultAdminEmail, DefaultAdminPassword);
-        logger.LogInformation("Seeded {Count} sample member accounts (password: Member123!).", sampleMembers.Length);
-        logger.LogInformation("Seeded {Count} sample PT accounts (password: Trainer123!).", samplePts.Length);
+            "Seeded default admin: {Email} (password: {Password}, access key: {Key}).",
+            DefaultAdminEmail, DefaultAdminPassword, admin.UniqueAccessKey);
+        foreach (var u in samplePts.Concat(sampleMembers))
+        {
+            logger.LogInformation("Seeded {Role} {Name} -> access key {Key}", u.Role, u.FullName, u.UniqueAccessKey);
+        }
+    }
+
+    private static async Task<string> GenerateUniqueKeyAsync(AppDbContext db)
+    {
+        for (var i = 0; i < 10; i++)
+        {
+            var key = AccessKeyGenerator.Generate();
+            if (!await db.Users.AnyAsync(u => u.UniqueAccessKey == key)) return key;
+        }
+        throw new InvalidOperationException("Failed to generate unique access key.");
     }
 }

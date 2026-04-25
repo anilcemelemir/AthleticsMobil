@@ -21,6 +21,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasIndex(u => u.Email).IsUnique();
+            entity.HasIndex(u => u.UniqueAccessKey).IsUnique();
             entity.Property(u => u.Role).HasConversion<string>().HasMaxLength(20);
         });
 

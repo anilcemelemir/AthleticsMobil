@@ -102,6 +102,30 @@ builder.Services
                     ctx.Token = accessToken;
                 }
                 return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = ctx =>
+            {
+                Console.WriteLine($"[JWT FAIL] {ctx.Request.Path} -> {ctx.Exception.GetType().Name}: {ctx.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnChallenge = ctx =>
+            {
+                Console.WriteLine($"[JWT CHALLENGE] {ctx.Request.Path} error={ctx.Error} desc={ctx.ErrorDescription}");
+                return Task.CompletedTask;
+            },
+            OnForbidden = ctx =>
+            {
+                var role = ctx.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var uid = ctx.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                Console.WriteLine($"[JWT 403] {ctx.Request.Path} userId={uid} role={role}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = ctx =>
+            {
+                var role = ctx.Principal?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var uid = ctx.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                Console.WriteLine($"[JWT OK] {ctx.Request.Path} userId={uid} role={role}");
+                return Task.CompletedTask;
             }
         };
     });

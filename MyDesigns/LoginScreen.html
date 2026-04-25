@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>IRON PULSE - Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #171309;
+            color: #ebe2d0;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#93000a",
+                        "primary-fixed-dim": "#eec200",
+                        "on-primary-container": "#6c5700",
+                        "inverse-primary": "#735c00",
+                        "on-secondary-container": "#afb9c9",
+                        "background": "#171309",
+                        "tertiary-container": "#cdd1d7",
+                        "secondary-fixed-dim": "#bdc7d8",
+                        "on-primary-fixed": "#231b00",
+                        "on-error-container": "#ffdad6",
+                        "error": "#ffb4ab",
+                        "outline": "#9a9078",
+                        "primary-container": "#facc15",
+                        "on-surface": "#ebe2d0",
+                        "on-surface-variant": "#d1c6ab",
+                        "secondary": "#bdc7d8",
+                        "surface-tint": "#eec200",
+                        "surface-container-high": "#2e2a1e",
+                        "on-background": "#ebe2d0",
+                        "on-secondary-fixed-variant": "#3e4755",
+                        "on-secondary": "#27313e",
+                        "on-tertiary-fixed": "#171c20",
+                        "surface-variant": "#393428",
+                        "secondary-container": "#404a57",
+                        "outline-variant": "#4d4632",
+                        "surface-container-lowest": "#110e05",
+                        "surface-container": "#231f14",
+                        "on-primary-fixed-variant": "#574500",
+                        "on-secondary-fixed": "#121c28",
+                        "on-error": "#690005",
+                        "tertiary-fixed-dim": "#c3c7cd",
+                        "on-tertiary-container": "#555a5f",
+                        "primary-fixed": "#ffe083",
+                        "inverse-surface": "#ebe2d0",
+                        "on-tertiary": "#2c3136",
+                        "surface": "#171309",
+                        "tertiary-fixed": "#dfe3e9",
+                        "secondary-fixed": "#d9e3f4",
+                        "on-primary": "#3c2f00",
+                        "surface-container-highest": "#393428",
+                        "on-tertiary-fixed-variant": "#43474c",
+                        "surface-dim": "#171309",
+                        "inverse-on-surface": "#353024",
+                        "surface-container-low": "#1f1b11",
+                        "primary": "#ffecb9",
+                        "surface-bright": "#3e392d",
+                        "tertiary": "#e9edf3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit-sm": "8px",
+                        "container-margin": "20px",
+                        "unit-xs": "4px",
+                        "gutter": "12px",
+                        "unit-xl": "40px",
+                        "unit-lg": "24px",
+                        "unit-md": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Lexend"],
+                        "headline-xl": ["Lexend"],
+                        "label-bold": ["Lexend"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Lexend"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "28px", "fontWeight": "700"}],
+                        "headline-xl": ["40px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "label-bold": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<!-- TopAppBar - Mapped from JSON -->
+<header class="bg-black text-yellow-400 font-['Lexend'] uppercase tracking-tighter font-bold docked full-width top-0 border-b border-gray-700 flex justify-between items-center w-full px-5 h-16">
+<div class="flex items-center gap-unit-sm">
+<span class="material-symbols-outlined text-yellow-400" data-icon="bolt">bolt</span>
+<span class="text-xl font-black italic text-yellow-400">IRON PULSE</span>
+</div>
+<button class="text-gray-400 hover:text-yellow-300 transition-colors active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</header>
+<main class="flex-grow flex flex-col items-center justify-center px-container-margin py-unit-xl">
+<!-- Hero Identity Section -->
+<div class="text-center mb-unit-xl">
+<h1 class="font-headline-xl text-headline-xl text-on-surface mb-unit-xs uppercase">READY FOR WAR?</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs mx-auto">Select your identity to resume training or join the elite force with an invitation code.</p>
+</div>
+<!-- User Profiles Grid - Asymmetric Layout Influence -->
+<div class="w-full max-w-md grid grid-cols-2 gap-gutter mb-unit-xl">
+<!-- Profile 1 -->
+<button class="group bg-[#111827] border border-outline-variant p-unit-md flex flex-col items-center transition-all hover:border-primary-container active:scale-95">
+<div class="relative w-24 h-24 mb-unit-sm overflow-hidden border-2 border-transparent group-hover:border-primary-container">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Close up portrait of a sweating athlete in a dark gym setting with intense cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByxJnewxVPiK46qMYGJhjC5LIHgdxVWCVcLVpE1yLNMscgrTiuvI9BXBnqs674ZTdzwJa6VVjHOMTWADYQFR4GpP4ihUgd7EVmkIetonSkGgZtQZbV7bVl9PYcHV-9XiSnn0jOHlZ8UXh1Lvocx-t3Fy8xqpUHrzWutZBi4xhmpJXkovFB1pkHaPuWRpOP530TPysPDFSnoGFT_LLVoPnpUFyE0zNjPa_jUAos-E8OqeVF9q8oxcSkScL09P4hs18RnmRsXVtSLlA"/>
+</div>
+<span class="font-headline-md text-body-md uppercase tracking-wider text-on-surface">MARCUS_X</span>
+<span class="font-label-sm text-label-sm text-primary-container">ELITE TIER</span>
+</button>
+<!-- Profile 2 -->
+<button class="group bg-[#111827] border border-outline-variant p-unit-md flex flex-col items-center transition-all hover:border-primary-container active:scale-95">
+<div class="relative w-24 h-24 mb-unit-sm overflow-hidden border-2 border-transparent group-hover:border-primary-container">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Athletic woman in fitness gear looking determined in a moody high-contrast gym environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgy3j5HRhO8fDsgkSpborKBANpWsYC575HPW0MBWwiAm2WREk2k4ujQdZ1dvx-Uu5y1zRW_RtUBP8SsPedougEK4FPA0M3fpfJQDKj5QZwwRDslir3S1X8Q1I0Sy_ViKR-lKPV9y4EUEhR7FLvOBym19VJ7jWQrcBYps9YxkY2Se5BGZEQrGK7yBlK405tCdmWc1LRd3Ckc-pmUQp3niAmH2islvW6Jy1qtAPIi7OzxY_EzXCxDfVVpBEsmCMBgTimcCyUP-DbCrY"/>
+</div>
+<span class="font-headline-md text-body-md uppercase tracking-wider text-on-surface">SARAH_STRIVE</span>
+<span class="font-label-sm text-label-sm text-primary-container">PRO ATHLETE</span>
+</button>
+<!-- Profile 3 -->
+<button class="group bg-[#111827] border border-outline-variant p-unit-md flex flex-col items-center transition-all hover:border-primary-container active:scale-95">
+<div class="relative w-24 h-24 mb-unit-sm overflow-hidden border-2 border-transparent group-hover:border-primary-container">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Intense close up of a focused man in a gym hoodie with strong rim lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrCA3ehoJu_2KU734SIE0jafP0xaOh32mGINyxQK3Kk1wLYAakaDDXp2Y-eEtZ9oDAO0ei4aCrDy9_WgAq0Q6fAKNaHYQlCo7L2sY3tY_XCUaHRNG9bs-zNVotNxfYyGKpbL5uvwfgoivLXOG0Dw34TadUa5miwtjOGGexgXUQ-xnxHhjcAZMaiZuOsg4bxe-yK0pI048eZvCmaVCedV_EAkj0mYfnv_gBXfwaEvHefNOkWuV3gBzH7Yu3B7M0cfpJQT_4zos0Bmg"/>
+</div>
+<span class="font-headline-md text-body-md uppercase tracking-wider text-on-surface">COACH_IRON</span>
+<span class="font-label-sm text-label-sm text-primary-container">MASTER TRAINER</span>
+</button>
+<!-- Add New Account - Special Slot -->
+<button class="group bg-black border-2 border-dashed border-outline-variant p-unit-md flex flex-col items-center justify-center transition-all hover:border-primary-container hover:bg-surface-container active:scale-95">
+<div class="w-24 h-24 flex items-center justify-center mb-unit-sm">
+<span class="material-symbols-outlined text-4xl text-outline-variant group-hover:text-primary-container" data-icon="add_circle">add_circle</span>
+</div>
+<span class="font-headline-md text-body-md uppercase tracking-wider text-outline-variant group-hover:text-primary-container">NEW UNIT</span>
+<span class="font-label-sm text-label-sm text-outline-variant">ADD PROFILE</span>
+</button>
+</div>
+<!-- Primary Action Section -->
+<div class="w-full max-w-md space-y-unit-md">
+<button class="w-full bg-primary-container text-black font-headline-md py-unit-md uppercase tracking-tighter flex items-center justify-center gap-unit-sm hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined" data-icon="confirmation_number">confirmation_number</span>
+                ENTER INVITATION CODE
+            </button>
+<div class="flex items-center justify-between text-on-surface-variant font-label-bold px-unit-xs">
+<a class="hover:text-primary-container transition-colors" href="#">FORGOT CREDENTIALS?</a>
+<a class="hover:text-primary-container transition-colors" href="#">PRIVACY TERMS</a>
+</div>
+</div>
+</main>
+<!-- Visual Accents: High-Energy Decorative Elements -->
+<div class="fixed top-0 right-0 -z-10 w-1/2 h-full opacity-5 pointer-events-none overflow-hidden">
+<h2 class="font-headline-xl text-[20vw] leading-none text-primary-container whitespace-nowrap rotate-90 origin-top-right select-none">
+            GRIND HARDER
+        </h2>
+</div>
+<!-- No BottomNavBar for Login Screen as per Shell Suppression rules -->
+<footer class="p-unit-lg text-center">
+<p class="font-label-sm text-outline tracking-[0.2em] uppercase">SYSTEM V4.2 // SECURE ACCESS ONLY</p>
+</footer>
+</body></html>

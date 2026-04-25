@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create Profile</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Lexend:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#d1c6ab",
+                        "on-secondary-fixed-variant": "#3e4755",
+                        "primary-fixed-dim": "#eec200",
+                        "on-secondary-fixed": "#121c28",
+                        "inverse-on-surface": "#353024",
+                        "surface-container-highest": "#393428",
+                        "on-tertiary-fixed-variant": "#43474c",
+                        "surface-tint": "#eec200",
+                        "secondary": "#bdc7d8",
+                        "primary-fixed": "#ffe083",
+                        "inverse-primary": "#735c00",
+                        "surface-dim": "#171309",
+                        "on-tertiary-container": "#555a5f",
+                        "on-background": "#ebe2d0",
+                        "surface-container-low": "#1f1b11",
+                        "on-secondary": "#27313e",
+                        "on-primary-fixed": "#231b00",
+                        "background": "#171309",
+                        "tertiary-fixed-dim": "#c3c7cd",
+                        "on-error": "#690005",
+                        "on-primary-container": "#6c5700",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#dfe3e9",
+                        "tertiary-container": "#cdd1d7",
+                        "secondary-fixed-dim": "#bdc7d8",
+                        "surface-variant": "#393428",
+                        "primary": "#ffecb9",
+                        "on-primary-fixed-variant": "#574500",
+                        "tertiary": "#e9edf3",
+                        "surface-container": "#231f14",
+                        "surface": "#171309",
+                        "secondary-fixed": "#d9e3f4",
+                        "on-tertiary-fixed": "#171c20",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "on-primary": "#3c2f00",
+                        "outline-variant": "#4d4632",
+                        "surface-bright": "#3e392d",
+                        "surface-container-high": "#2e2a1e",
+                        "secondary-container": "#404a57",
+                        "on-tertiary": "#2c3136",
+                        "on-surface": "#ebe2d0",
+                        "surface-container-lowest": "#110e05",
+                        "primary-container": "#facc15",
+                        "inverse-surface": "#ebe2d0",
+                        "on-secondary-container": "#afb9c9",
+                        "outline": "#9a9078"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit-sm": "8px",
+                        "gutter": "12px",
+                        "unit-xs": "4px",
+                        "unit-md": "16px",
+                        "container-margin": "20px",
+                        "unit-xl": "40px",
+                        "unit-lg": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Lexend"],
+                        "label-bold": ["Lexend"],
+                        "body-md": ["Inter"],
+                        "headline-xl": ["Lexend"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Lexend"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-bold": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["40px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md text-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="bg-black text-yellow-400 font-lexend font-bold uppercase tracking-wider docked full-width top-0 border-b border-gray-700 flat no shadows flex items-center justify-between w-full h-16 px-5 z-50">
+<button aria-label="Go back" class="hover:bg-gray-900 active:scale-95 transition-transform p-2 -ml-2 rounded-full flex items-center justify-center text-yellow-400">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="text-xl font-black text-yellow-400 m-0">CREATE PROFILE</h1>
+<div class="w-10"></div> <!-- Spacer for center alignment -->
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col px-container-margin py-unit-xl relative">
+<!-- Background Accent Graphic (Subtle Brutalist lines) -->
+<div aria-hidden="true" class="absolute top-0 right-0 w-64 h-64 border-r border-b border-surface-container-high opacity-20 pointer-events-none"></div>
+<div class="flex-1 flex flex-col">
+<div class="mb-unit-xl">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-unit-xs">GEAR UP.</h2>
+<p class="font-body-md text-body-md text-secondary">Calibrate your vital stats for precise performance tracking.</p>
+</div>
+<!-- Registration Form -->
+<form class="flex flex-col gap-unit-lg flex-1"><!-- Invitation Code Input -->
+<div class="flex flex-col gap-unit-xs">
+<label class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-widest" for="inviteCode">Invitation Code</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-unit-md text-outline" data-icon="key">key</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface py-unit-md pl-12 pr-unit-md font-body-lg text-body-lg rounded-DEFAULT focus:border-primary-container focus:outline-none placeholder:text-surface-container-highest transition-colors uppercase" id="inviteCode" maxlength="6" placeholder="ENTER YOUR 6-DIGIT CODE" type="text"/>
+</div>
+</div>
+<!-- Full Name Input -->
+<!-- Fitness Goal Dropdown -->
+<!-- Physical Stats Grid -->
+<!-- Spacer to push CTA to bottom if needed, though mt-auto on CTA works too -->
+<div class="flex-1"></div>
+<!-- Primary CTA -->
+<button class="w-full mt-unit-xl bg-primary-container text-on-primary-container font-headline-md text-headline-md py-4 px-unit-md rounded-DEFAULT uppercase tracking-tight shadow-[0_0_24px_rgba(250,204,21,0.15)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group border border-transparent hover:border-primary-fixed" type="button">
+<span>START YOUR JOURNEY</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" data-icon="arrow_forward_ios">arrow_forward_ios</span>
+</button>
+</form>
+</div>
+</main>
+</body></html>

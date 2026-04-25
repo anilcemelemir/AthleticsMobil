@@ -25,7 +25,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
@@ -44,6 +45,19 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(dto);
         if (result is null)
             return Unauthorized(new { message = "Invalid email or password." });
+
+        return Ok(result);
+    }
+
+    /// <summary>Sign in using the unique access key issued at registration.</summary>
+    [HttpPost("login-key")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> LoginWithKey([FromBody] LoginWithKeyDto dto)
+    {
+        var result = await _authService.LoginWithKeyAsync(dto);
+        if (result is null)
+            return Unauthorized(new { message = "Invalid access key." });
 
         return Ok(result);
     }

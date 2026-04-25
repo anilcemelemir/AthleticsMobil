@@ -23,23 +23,44 @@ public class AuthService : IAuthService
         _config = config;
     }
 
-    public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
+    public async Task<RegisterResponseDto?> RegisterAsync(RegisterDto dto)
     {
-        var email = dto.Email.Trim().ToLowerInvariant();
+        // Email is now optional; treat blank as null. If supplied, ensure it's unique.
+        var email = string.IsNullOrWhiteSpace(dto.Email)
+            ? null
+            : dto.Email.Trim().ToLowerInvariant();
 
-        if (await _db.Users.AnyAsync(u => u.Email == email))
+        if (email is not null && await _db.Users.AnyAsync(u => u.Email == email))
             return null; // caller treats null as conflict
 
+        // Generate a unique access key (retry on collision — effectively impossible).
+        string key;
+        var attempts = 0;
+        do
+        {
+            key = AccessKeyGenerator.Generate();
+            attempts++;
+            if (attempts > 10) throw new InvalidOperationException("Failed to generate unique access key.");
+        }
+        while (await _db.Users.AnyAsync(u => u.UniqueAccessKey == key));
+
         var user = _mapper.Map<User>(dto);
-        user.Email = email;
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        user.Email = email ?? $"{key.ToLowerInvariant()}@gymsync.local";
+        user.UniqueAccessKey = key;
+        // Password auth is deprecated, but the column is required — store a random hash
+        // so nobody can ever sign in with email + password for new accounts.
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString("N"));
         user.CreatedAt = DateTime.UtcNow;
         user.IsActive = true;
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
-        return BuildResponse(user);
+        return new RegisterResponseDto
+        {
+            User = _mapper.Map<UserDto>(user),
+            AccessKey = key,
+        };
     }
 
     public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
@@ -51,6 +72,22 @@ public class AuthService : IAuthService
             return null;
 
         if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            return null;
+
+        return BuildResponse(user);
+    }
+
+    public async Task<AuthResponseDto?> LoginWithKeyAsync(LoginWithKeyDto dto)
+    {
+        var key = dto.AccessKey.Trim().ToUpperInvariant();
+        if (string.IsNullOrEmpty(key)) return null;
+
+        // Allow users to type the key without the "GS-" prefix.
+        if (!key.StartsWith(AccessKeyGenerator.Prefix, StringComparison.Ordinal))
+            key = AccessKeyGenerator.Prefix + key;
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.UniqueAccessKey == key);
+        if (user is null || !user.IsActive)
             return null;
 
         return BuildResponse(user);

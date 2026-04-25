@@ -12,6 +12,8 @@ public class MappingProfile : Profile
 
         CreateMap<RegisterDto, User>()
             .ForMember(dst => dst.PasswordHash, opt => opt.Ignore())
+            .ForMember(dst => dst.UniqueAccessKey, opt => opt.Ignore())
+            .ForMember(dst => dst.Email, opt => opt.Ignore())
             .ForMember(dst => dst.Id, opt => opt.Ignore())
             .ForMember(dst => dst.CreatedAt, opt => opt.Ignore())
             .ForMember(dst => dst.UpdatedAt, opt => opt.Ignore())

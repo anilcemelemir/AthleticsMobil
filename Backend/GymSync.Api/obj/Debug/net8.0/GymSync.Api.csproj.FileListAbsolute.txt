@@ -122,3 +122,4 @@ C:\Users\anil_\VS Code Workspace\GymSync-App\Backend\GymSync.Api\obj\Debug\net8.
 C:\Users\anil_\VS Code Workspace\GymSync-App\Backend\GymSync.Api\obj\Debug\net8.0\GymSync.Api.genruntimeconfig.cache
 C:\Users\anil_\VS Code Workspace\GymSync-App\Backend\GymSync.Api\obj\Debug\net8.0\ref\GymSync.Api.dll
 C:\Users\anil_\VS Code Workspace\GymSync-App\Backend\GymSync.Api\bin\Debug\net8.0\BCrypt.Net-Next.dll
+C:\Users\anil_\VS Code Workspace\GymSync-App\Backend\GymSync.Api\obj\Debug\net8.0\GymSync.Api.sourcelink.json

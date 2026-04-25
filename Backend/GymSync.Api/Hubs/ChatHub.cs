@@ -40,6 +40,21 @@ public class ChatHub : Hub
         return int.TryParse(claim, out var id) ? id : 0;
     }
 
+    public override Task OnConnectedAsync()
+    {
+        var uid = GetUserId();
+        var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value ?? "?";
+        Console.WriteLine($"[ChatHub] CONNECT  cid={Context.ConnectionId}  userId={uid}  role={role}");
+        return base.OnConnectedAsync();
+    }
+
+    public override Task OnDisconnectedAsync(Exception? exception)
+    {
+        var uid = GetUserId();
+        Console.WriteLine($"[ChatHub] DISCONNECT cid={Context.ConnectionId} userId={uid} reason={exception?.Message ?? "normal"}");
+        return base.OnDisconnectedAsync(exception);
+    }
+
     /// <summary>
     /// Send a chat message. Persists to DB and pushes "ReceiveMessage" to both
     /// the receiver (if connected) and the sender (so other devices see it too).

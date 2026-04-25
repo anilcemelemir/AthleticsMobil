@@ -134,6 +134,8 @@ public class ChatController : ControllerBase
     public async Task<ActionResult<BulkSendResponseDto>> BulkSend([FromBody] BulkSendDto dto)
     {
         var me = GetUserId();
+        var role = User.FindFirstValue(ClaimTypes.Role);
+        Console.WriteLine($"[ChatController] bulk-send userId={me} role={role} count={dto?.MemberIds?.Count ?? 0}");
         if (me == 0) return Unauthorized();
 
         var content = dto.Content?.Trim();
