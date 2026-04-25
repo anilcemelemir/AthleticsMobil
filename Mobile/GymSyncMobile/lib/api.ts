@@ -26,16 +26,24 @@ export const api = axios.create({
 let authToken: string | null = null;
 
 export function setAuthToken(token: string | null) {
-  authToken = token;
-  if (token) {
-    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+  // Defensive: treat the literal string "undefined" or empty string as null
+  // so a corrupted SecureStore value can never produce `Authorization: Bearer undefined`.
+  const safe = token && token !== 'undefined' && token.length > 0 ? token : null;
+  authToken = safe;
+  if (safe) {
+    api.defaults.headers.common.Authorization = `Bearer ${safe}`;
   } else {
     delete api.defaults.headers.common.Authorization;
   }
 }
 
 api.interceptors.request.use((config) => {
-  if (authToken && !config.headers.Authorization) {
+  if (
+    authToken &&
+    authToken !== 'undefined' &&
+    authToken.length > 0 &&
+    !config.headers.Authorization
+  ) {
     config.headers.Authorization = `Bearer ${authToken}`;
   }
   return config;

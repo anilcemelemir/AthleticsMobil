@@ -10,6 +10,9 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Bind to all interfaces so phones / emulators on the LAN can reach us.
+builder.WebHost.UseUrls("http://0.0.0.0:5159");
+
 // Controllers
 builder.Services.AddControllers();
 
@@ -134,6 +137,10 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// CORS must be the very first middleware so preflight (OPTIONS) responses
+// always include the Access-Control-* headers, even on auth-failed paths.
+app.UseCors("AllowAll");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -142,8 +149,6 @@ if (app.Environment.IsDevelopment())
 
 // Skip HTTPS redirect so physical devices on LAN can reach plain http://<lan-ip>:5159
 // app.UseHttpsRedirection();
-
-app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
