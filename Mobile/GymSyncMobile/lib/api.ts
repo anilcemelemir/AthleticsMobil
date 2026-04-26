@@ -167,13 +167,20 @@ export interface TrainerDto {
 
 export interface AppointmentDto {
   id: number;
+  availabilityId?: number | null;
   memberId: number;
   memberName: string;
+  memberEmail: string;
+  memberPhoneNumber?: string | null;
+  memberRemainingCredits: number;
   ptId: number;
   ptName: string;
   appointmentDate: string;
+  slotStart: string;
+  slotEnd: string;
   status: string;
   remainingCredits: number;
+  createdAt: string;
 }
 
 export async function getTrainers(): Promise<TrainerDto[]> {

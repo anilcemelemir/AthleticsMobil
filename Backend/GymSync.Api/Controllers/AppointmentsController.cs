@@ -93,13 +93,20 @@ public class AppointmentsController : ControllerBase
             return Ok(new AppointmentDto
             {
                 Id = appointment.Id,
+                AvailabilityId = slot.Id,
                 MemberId = member.Id,
                 MemberName = member.FullName,
+                MemberEmail = member.Email,
+                MemberPhoneNumber = member.PhoneNumber,
+                MemberRemainingCredits = member.RemainingCredits,
                 PTId = slot.PTId,
                 PTName = ptName,
                 AppointmentDate = appointment.AppointmentDate,
+                SlotStart = slot.SlotStart,
+                SlotEnd = slot.SlotEnd,
                 Status = appointment.Status.ToString(),
-                RemainingCredits = member.RemainingCredits
+                RemainingCredits = member.RemainingCredits,
+                CreatedAt = appointment.CreatedAt
             });
         }
         catch (DbUpdateException ex)
@@ -132,7 +139,8 @@ public class AppointmentsController : ControllerBase
         IQueryable<Appointment> query = _db.Appointments
             .AsNoTracking()
             .Include(a => a.Member)
-            .Include(a => a.PT);
+            .Include(a => a.PT)
+            .Include(a => a.Availability);
 
         query = roleClaim == nameof(UserRole.PT)
             ? query.Where(a => a.PTId == userId)
@@ -143,13 +151,20 @@ public class AppointmentsController : ControllerBase
             .Select(a => new AppointmentDto
             {
                 Id = a.Id,
+                AvailabilityId = a.AvailabilityId,
                 MemberId = a.MemberId,
                 MemberName = a.Member!.FullName,
+                MemberEmail = a.Member.Email,
+                MemberPhoneNumber = a.Member.PhoneNumber,
+                MemberRemainingCredits = a.Member.RemainingCredits,
                 PTId = a.PTId,
                 PTName = a.PT!.FullName,
                 AppointmentDate = a.AppointmentDate,
+                SlotStart = a.Availability != null ? a.Availability.SlotStart : a.AppointmentDate,
+                SlotEnd = a.Availability != null ? a.Availability.SlotEnd : a.AppointmentDate.AddHours(1),
                 Status = a.Status.ToString(),
-                RemainingCredits = 0
+                RemainingCredits = a.Member.RemainingCredits,
+                CreatedAt = a.CreatedAt
             })
             .ToListAsync();
 

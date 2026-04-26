@@ -4,7 +4,7 @@ import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ManagementScreen from '@/components/ManagementScreen';
-import MyScheduleScreen from '@/components/MyScheduleScreen';
+import PTDashboardScreen from '@/components/PTDashboardScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROLE } from '@/lib/api';
 
@@ -20,7 +20,7 @@ export default function HomeTabScreen() {
   if (!user) return null;
 
   if (user.role === ROLE.Admin) return <ManagementScreen />;
-  if (user.role === ROLE.PT) return <MyScheduleScreen />;
+  if (user.role === ROLE.PT) return <PTDashboardScreen />;
 
   return <DashboardScreen />;
 }

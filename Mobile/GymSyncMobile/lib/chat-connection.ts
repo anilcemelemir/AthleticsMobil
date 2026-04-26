@@ -2,6 +2,7 @@ import {
   HubConnection,
   HubConnectionBuilder,
   HubConnectionState,
+  HttpTransportType,
   LogLevel,
 } from '@microsoft/signalr';
 
@@ -34,9 +35,10 @@ class ChatConnection {
     const conn = new HubConnectionBuilder()
       .withUrl(hubUrl, {
         accessTokenFactory: () => this.token ?? '',
+        transport: HttpTransportType.LongPolling,
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000, 15000])
-      .configureLogging(LogLevel.Information)
+      .configureLogging(LogLevel.Warning)
       .build();
 
     conn.on('ReceiveMessage', (msg: MessageDto) => {

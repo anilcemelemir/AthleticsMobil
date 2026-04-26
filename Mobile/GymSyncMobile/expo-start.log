@@ -1,0 +1,8 @@
+
+> gymsyncmobile@1.0.0 start
+> expo start --offline --port 8081
+
+env: load .env.local
+env: export EXPO_PUBLIC_API_URL
+Networking has been disabled
+Starting project at C:\Users\krhn1\Desktop\PROJECTS FOLDER\AthleticsMobil\Mobile\GymSyncMobile

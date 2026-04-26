@@ -43,11 +43,18 @@ public class BookAppointmentDto
 public class AppointmentDto
 {
     public int Id { get; set; }
+    public int? AvailabilityId { get; set; }
     public int MemberId { get; set; }
     public string MemberName { get; set; } = string.Empty;
+    public string MemberEmail { get; set; } = string.Empty;
+    public string? MemberPhoneNumber { get; set; }
+    public int MemberRemainingCredits { get; set; }
     public int PTId { get; set; }
     public string PTName { get; set; } = string.Empty;
     public DateTime AppointmentDate { get; set; }
+    public DateTime SlotStart { get; set; }
+    public DateTime SlotEnd { get; set; }
     public string Status { get; set; } = string.Empty;
     public int RemainingCredits { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

@@ -1,0 +1,13 @@
+
+> gymsyncmobile@1.0.0 start
+> expo start --lan --port 8083
+
+env: load .env.local
+env: export EXPO_PUBLIC_API_URL
+Starting project at C:\Users\krhn1\Desktop\PROJECTS FOLDER\AthleticsMobil\Mobile\GymSyncMobile
+Starting Metro Bundler
+The following packages should be updated for best compatibility with the installed expo version:
+  expo-secure-store@55.0.13 - expected version: ~15.0.8
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8083
+Logs for your project will appear below.

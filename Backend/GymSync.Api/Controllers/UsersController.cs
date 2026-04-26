@@ -23,10 +23,10 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Returns all users with the Member role. Admin only.
+    /// Returns all users with the Member role. Admin and PT only.
     /// </summary>
     [HttpGet("members")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,PT")]
     [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMembers()
     {

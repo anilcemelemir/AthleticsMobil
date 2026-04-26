@@ -2,6 +2,7 @@
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,7 +16,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { getMySlots, setMySlots, type AvailabilityDto } from '@/lib/api';
+import {
+  getMyAppointments,
+  getMySlots,
+  setMySlots,
+  type AppointmentDto,
+  type AvailabilityDto,
+} from '@/lib/api';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -35,7 +42,9 @@ function formatTimeLabel(d: Date): string {
 }
 
 export default function MyScheduleScreen() {
+  const router = useRouter();
   const [slots, setSlots] = useState<AvailabilityDto[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +63,12 @@ export default function MyScheduleScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const res = await getMySlots();
-      setSlots(res);
+      const [slotRes, appointmentRes] = await Promise.all([
+        getMySlots(),
+        getMyAppointments(),
+      ]);
+      setSlots(slotRes);
+      setAppointments(appointmentRes);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load schedule.');
     }
@@ -124,6 +137,15 @@ export default function MyScheduleScreen() {
   };
 
   const grouped = useMemo(() => slots, [slots]);
+  const appointmentsBySlotId = useMemo(() => {
+    const map = new Map<number, AppointmentDto>();
+    for (const appointment of appointments) {
+      if (appointment.availabilityId) {
+        map.set(appointment.availabilityId, appointment);
+      }
+    }
+    return map;
+  }, [appointments]);
 
   if (loading) {
     return (
@@ -229,13 +251,29 @@ export default function MyScheduleScreen() {
           const start = new Date(item.slotStart);
           const end = new Date(item.slotEnd);
           const inPast = start.getTime() <= Date.now();
+          const appointment = appointmentsBySlotId.get(item.id);
           const tone = item.isBooked
             ? { bg: 'bg-accent-green/20', text: 'text-accent-green', label: 'Booked' }
             : inPast
               ? { bg: 'bg-surface-container-high', text: 'text-on-surface-variant', label: 'Expired' }
               : { bg: 'bg-primary/20', text: 'text-primary', label: 'Open' };
+          const Row = item.isBooked && appointment ? Pressable : View;
           return (
-            <View className="flex-row items-center rounded-2xl bg-surface-container p-4 shadow-sm">
+            <Row
+              {...(item.isBooked && appointment
+                  ? {
+                    onPress: () =>
+                      router.push({
+                        pathname: '/appointment/[id]',
+                        params: { id: String(appointment.id) },
+                      }),
+                    className:
+                      'flex-row items-center rounded-2xl bg-surface-container p-4 shadow-sm active:bg-surface-container-high',
+                  }
+                : {
+                    className: 'flex-row items-center rounded-2xl bg-surface-container p-4 shadow-sm',
+                  })}
+            >
               <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-surface-container-high">
                 <Text className="text-xs font-semibold text-on-surface-variant">
                   {start.toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
@@ -249,18 +287,28 @@ export default function MyScheduleScreen() {
                   {formatTimeLabel(start)} – {formatTimeLabel(end)}
                 </Text>
                 <Text className="text-xs text-on-surface-variant">
-                  {start.toLocaleDateString(undefined, {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
+                  {appointment
+                    ? `Reserved by ${appointment.memberName}`
+                    : start.toLocaleDateString(undefined, {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
                 </Text>
               </View>
-              <View className={`rounded-full px-3 py-1 ${tone.bg}`}>
-                <Text className={`text-xs font-bold ${tone.text}`}>{tone.label}</Text>
+              <View className="items-end">
+                <View className={`rounded-full px-3 py-1 ${tone.bg}`}>
+                  <Text className={`text-xs font-bold ${tone.text}`}>{tone.label}</Text>
+                </View>
+                {appointment && (
+                  <View className="mt-1 flex-row items-center">
+                    <Text className="mr-1 text-[10px] font-semibold text-primary">DETAILS</Text>
+                    <Ionicons name="chevron-forward" size={14} color="#facc15" />
+                  </View>
+                )}
               </View>
-            </View>
+            </Row>
           );
         }}
       />

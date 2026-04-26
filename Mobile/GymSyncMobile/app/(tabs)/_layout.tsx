@@ -21,11 +21,11 @@ export default function TabLayout() {
   const isPt = user?.role === ROLE.PT;
   const isMember = user?.role === ROLE.Member;
 
-  const homeTitle = isAdmin ? 'Management' : isPt ? 'Schedule' : 'Dashboard';
+  const homeTitle = isAdmin ? 'Management' : 'Dashboard';
   const homeIcon: React.ComponentProps<typeof Ionicons>['name'] = isAdmin
     ? 'people'
     : isPt
-      ? 'calendar'
+      ? 'speedometer'
       : 'home';
 
   return (
@@ -61,6 +61,36 @@ export default function TabLayout() {
           href: isMember ? '/(tabs)/book' : null,
           tabBarIcon: ({ color }) => (
             <TabBarIcon name="add-circle" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="reservations"
+        options={{
+          title: 'Reservations',
+          href: isMember ? '/(tabs)/reservations' : null,
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="calendar" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="schedule"
+        options={{
+          title: 'Schedule',
+          href: isPt ? '/(tabs)/schedule' : null,
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="calendar" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="today"
+        options={{
+          title: 'Today',
+          href: isPt ? '/(tabs)/today' : null,
+          tabBarIcon: ({ color }) => (
+            <TabBarIcon name="today" color={color} />
           ),
         }}
       />
