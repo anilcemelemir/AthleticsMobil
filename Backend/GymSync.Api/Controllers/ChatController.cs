@@ -128,9 +128,9 @@ public class ChatController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>PT-only: send the same message to many members at once.</summary>
+    /// <summary>Admin/PT: send the same message to many recipients at once.</summary>
     [HttpPost("bulk-send")]
-    [Authorize(Roles = "PT")]
+    [Authorize(Roles = "Admin,PT")]
     public async Task<ActionResult<BulkSendResponseDto>> BulkSend([FromBody] BulkSendDto dto)
     {
         var me = GetUserId();
@@ -149,15 +149,25 @@ public class ChatController : ControllerBase
         var sender = await _db.Users.FindAsync(me);
         if (sender is null) return Unauthorized();
 
-        var members = await _db.Users
-            .Where(u => ids.Contains(u.Id) && u.IsActive && u.Role == UserRole.Member)
+        var senderRole = sender.Role;
+        var recipients = await _db.Users
+            .Where(u => ids.Contains(u.Id) && u.IsActive)
             .ToListAsync();
 
-        var foundIds = members.Select(m => m.Id).ToHashSet();
+        if (senderRole == UserRole.PT)
+        {
+            recipients = recipients.Where(u => u.Role == UserRole.Member).ToList();
+        }
+        else if (senderRole == UserRole.Admin)
+        {
+            recipients = recipients.Where(u => u.Role is UserRole.Member or UserRole.PT).ToList();
+        }
+
+        var foundIds = recipients.Select(m => m.Id).ToHashSet();
         var failed = ids.Where(id => !foundIds.Contains(id)).ToList();
 
         var now = DateTime.UtcNow;
-        var messages = members.Select(m => new Message
+        var messages = recipients.Select(m => new Message
         {
             SenderId = me,
             ReceiverId = m.Id,
@@ -175,14 +185,14 @@ public class ChatController : ControllerBase
             for (var i = 0; i < messages.Count; i++)
             {
                 var m = messages[i];
-                var recv = members[i];
+                var recv = recipients[i];
                 var payload = ToDto(m, sender, recv);
                 await _hub.Clients.User(recv.Id.ToString()).SendAsync("ReceiveMessage", payload);
             }
             // Notify sender's other devices once (per recipient).
             foreach (var m in messages)
             {
-                var recv = members.First(u => u.Id == m.ReceiverId);
+                var recv = recipients.First(u => u.Id == m.ReceiverId);
                 await _hub.Clients.User(me.ToString())
                     .SendAsync("ReceiveMessage", ToDto(m, sender, recv));
             }

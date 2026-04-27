@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { getMyAppointments, type AppointmentDto } from '@/lib/api';
 
 function formatDate(d: Date): string {
@@ -45,9 +46,9 @@ export default function AppointmentDetailScreen() {
       const appointments = await getMyAppointments();
       const found = appointments.find((item) => item.id === appointmentId) ?? null;
       setAppointment(found);
-      if (!found) setError('Appointment not found.');
+      if (!found) setError('Randevu bulunamadı.');
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load appointment.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Randevu yüklenemedi.');
     }
   }, [appointmentId]);
 
@@ -82,23 +83,16 @@ export default function AppointmentDetailScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
+      <AthletixHeader onBack={() => router.back()} />
       <ScrollView
         contentContainerClassName="px-5 pb-10"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#facc15" />
         }
       >
-        <View className="mb-5 mt-2 flex-row items-center">
-          <Pressable
-            onPress={() => router.back()}
-            className="mr-3 h-10 w-10 items-center justify-center rounded-sm bg-surface-container active:bg-surface-container-high"
-          >
-            <Ionicons name="chevron-back" size={22} color="#ebe2d0" />
-          </Pressable>
-          <View className="flex-1">
-            <Text className="text-xs text-on-surface-variant">Reserved slot</Text>
-            <Text className="text-2xl font-bold text-on-background">Session Details</Text>
-          </View>
+        <View className="mb-5 mt-5">
+          <Text className="text-xs text-on-surface-variant">Seans Detayı</Text>
+          <Text className="text-2xl font-bold text-on-background">Randevu Bilgileri</Text>
         </View>
 
         {error && (
@@ -111,7 +105,7 @@ export default function AppointmentDetailScreen() {
           <>
             <View className="mb-3 rounded-sm border border-primary/40 bg-primary/10 p-5">
               <View className="mb-3 flex-row items-center justify-between">
-                <Text className="text-xs font-semibold text-primary">CONFIRMED SESSION</Text>
+                <Text className="text-xs font-semibold text-primary">ONAYLI SEANS</Text>
                 <View className="rounded-sm bg-accent-green/20 px-3 py-1">
                   <Text className="text-xs font-bold text-accent-green">
                     {appointment.status.toUpperCase()}
@@ -127,33 +121,33 @@ export default function AppointmentDetailScreen() {
             </View>
 
             <View className="mb-3 rounded-sm border border-outline-variant bg-surface-container p-5">
-              <Text className="mb-4 text-base font-bold text-on-background">Member</Text>
-              <DetailRow icon="person" label="Name" value={appointment.memberName} />
-              <DetailRow icon="mail" label="Email" value={appointment.memberEmail || '-'} />
+              <Text className="mb-4 text-base font-bold text-on-background">Üye</Text>
+              <DetailRow icon="person" label="Ad Soyad" value={appointment.memberName} />
+              <DetailRow icon="mail" label="E-posta" value={appointment.memberEmail || '-'} />
               <DetailRow
                 icon="call"
-                label="Phone"
+                label="Telefon"
                 value={appointment.memberPhoneNumber || '-'}
               />
               <DetailRow
                 icon="flash"
-                label="Credits left"
+                label="Kalan kredi"
                 value={String(appointment.memberRemainingCredits)}
                 isLast
               />
             </View>
 
             <View className="rounded-sm border border-outline-variant bg-surface-container p-5">
-              <Text className="mb-4 text-base font-bold text-on-background">Reservation</Text>
-              <DetailRow icon="barbell" label="Trainer" value={appointment.ptName} />
+              <Text className="mb-4 text-base font-bold text-on-background">Rezervasyon</Text>
+              <DetailRow icon="barbell" label="Antrenör" value={appointment.ptName} />
               <DetailRow
                 icon="calendar"
-                label="Booked at"
+                label="Rezervasyon zamanı"
                 value={new Date(appointment.createdAt).toLocaleString()}
               />
               <DetailRow
                 icon="key"
-                label="Appointment ID"
+                label="Randevu ID"
                 value={`#${appointment.id}`}
                 isLast
               />
@@ -192,3 +186,4 @@ function DetailRow({
     </View>
   );
 }
+

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getMembers,
@@ -67,7 +68,7 @@ export default function PTDashboardScreen() {
       setAppointments(appointmentRes);
       setMembers(memberRes);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load dashboard.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Panel yüklenemedi.');
     }
   }, []);
 
@@ -108,7 +109,7 @@ export default function PTDashboardScreen() {
     [upcomingAppointments],
   );
 
-  const firstName = user?.fullName.split(' ')[0] ?? 'Coach';
+  const firstName = user?.fullName.split(' ')[0] ?? 'Antrenör';
   const days = weekDays();
 
   if (loading) {
@@ -121,24 +122,13 @@ export default function PTDashboardScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <View className="flex-row items-center justify-between border-b border-outline-variant bg-black px-5 py-3">
-        <View className="flex-row items-center gap-4">
-          <View className="h-8 w-8 items-center justify-center rounded-full bg-surface-container-high">
-            <Text className="text-sm font-bold text-primary">
-              {firstName.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-          <Text
-            className="text-xl italic text-primary"
-            style={{ fontFamily: 'Lexend_900Black', letterSpacing: 0 }}
-          >
-            TRAINER HUB
-          </Text>
-        </View>
-        <Pressable className="h-9 w-9 items-center justify-center rounded-full active:bg-surface-container">
-          <Ionicons name="notifications-outline" size={22} color="#9ca3af" />
-        </Pressable>
-      </View>
+      <AthletixHeader
+        right={
+          <Pressable className="h-10 w-10 items-center justify-center rounded-sm active:bg-surface-container">
+            <Ionicons name="notifications-outline" size={22} color="#9ca3af" />
+          </Pressable>
+        }
+      />
 
       <ScrollView
         contentContainerClassName="gap-8 px-5 pb-28 pt-6"
@@ -151,10 +141,10 @@ export default function PTDashboardScreen() {
             className="text-on-background"
             style={{ fontFamily: 'Lexend_800ExtraBold', fontSize: 40, lineHeight: 44 }}
           >
-            Welcome back, <Text className="text-primary">Coach</Text>
+            Tekrar hoş geldin, <Text className="text-primary">Antrenör</Text>
           </Text>
           <Text className="mt-1 text-base text-on-surface-variant">
-            Let's crush today's goals.
+            Bugünün hedeflerini birlikte tamamlayalım.
           </Text>
           {error ? (
             <View className="mt-4 rounded-sm border border-accent-red/40 bg-accent-red/10 p-3">
@@ -164,10 +154,10 @@ export default function PTDashboardScreen() {
         </View>
 
         <View className="flex-row flex-wrap gap-2">
-          <StatCard label="Sessions" value={String(todayAppointments.length)} icon="barbell" />
-          <StatCard label="Clients" value={String(activeClientCount || members.length)} icon="people" />
+          <StatCard label="Seanslar" value={String(todayAppointments.length)} icon="barbell" />
+          <StatCard label="Üyeler" value={String(activeClientCount || members.length)} icon="people" />
           <StatCard
-            label="Upcoming"
+            label="Yaklaşan"
             value={String(upcomingAppointments.length)}
             icon="calendar"
             wide
@@ -175,10 +165,10 @@ export default function PTDashboardScreen() {
         </View>
 
         <View className="gap-4">
-          <SectionTitle title="Today's Schedule" action="View All" onPress={() => router.push('/(tabs)/today')} />
+          <SectionTitle title="Bugünün Programı" action="Tümü" onPress={() => router.push('/(tabs)/today')} />
           <View className="gap-2">
             {todayAppointments.length === 0 ? (
-              <EmptyPanel icon="calendar-clear-outline" text="No booked sessions today." />
+              <EmptyPanel icon="calendar-clear-outline" text="Bugün rezerve seans yok." />
             ) : (
               todayAppointments.slice(0, 3).map((appointment, index) => (
                 <ScheduleItem
@@ -192,7 +182,7 @@ export default function PTDashboardScreen() {
         </View>
 
         <View className="gap-4">
-          <SectionTitle title="This Week" />
+          <SectionTitle title="Bu Hafta" />
           <View className="rounded-sm border border-[#4B5563] bg-[#111827] p-4">
             <View className="flex-row justify-between">
               {days.map((day) => {
@@ -244,7 +234,7 @@ export default function PTDashboardScreen() {
               className="text-2xl uppercase text-black"
               style={{ fontFamily: 'Lexend_800ExtraBold' }}
             >
-              ADD NEW SESSION
+              YENİ SEANS EKLE
             </Text>
           </Pressable>
           <Pressable
@@ -253,7 +243,7 @@ export default function PTDashboardScreen() {
           >
             <Ionicons name="chatbubbles-outline" size={20} color="#ebe2d0" />
             <Text className="text-sm font-bold uppercase text-on-background">
-              MESSAGE CLIENTS
+              ÜYELERE MESAJ GÖNDER
             </Text>
           </Pressable>
         </View>
@@ -339,12 +329,12 @@ function ScheduleItem({
         </View>
         <View>
           <Text className="text-sm font-bold text-on-background">{appointment.memberName}</Text>
-          <Text className="text-sm text-on-surface-variant">Training Session</Text>
+          <Text className="text-sm text-on-surface-variant">Antrenman Seansı</Text>
         </View>
       </View>
       {active ? (
         <View className="rounded-sm border border-[#4B5563] bg-[#1F2937] px-3 py-1">
-          <Text className="text-xs font-semibold uppercase text-[#D1D5DB]">In Progress</Text>
+          <Text className="text-xs font-semibold uppercase text-[#D1D5DB]">Devam Ediyor</Text>
         </View>
       ) : null}
     </View>
@@ -365,3 +355,4 @@ function EmptyPanel({
     </View>
   );
 }
+

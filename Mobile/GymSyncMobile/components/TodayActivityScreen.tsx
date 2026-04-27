@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import {
   getMyAppointments,
   getMySlots,
@@ -73,7 +74,7 @@ export default function TodayActivityScreen() {
       setSlots(slotRes);
       setAppointments(appointmentRes);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load today.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Bugünün programı yüklenemedi.');
     }
   }, []);
 
@@ -122,6 +123,7 @@ export default function TodayActivityScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
+      <AthletixHeader />
       <FlatList
         data={rows}
         keyExtractor={(item) => item.slot.id.toString()}
@@ -132,7 +134,7 @@ export default function TodayActivityScreen() {
         }
         ListHeaderComponent={
           <View>
-            <View className="mb-5 mt-2 flex-row items-center justify-between border-b border-outline-variant pb-4">
+            <View className="mb-5 mt-5 flex-row items-center justify-between">
               <View className="flex-row items-center">
                 <View className="mr-3 h-10 w-10 items-center justify-center rounded-sm border border-primary">
                   <Ionicons name="calendar" size={18} color="#facc15" />
@@ -142,10 +144,10 @@ export default function TodayActivityScreen() {
                     className="text-primary"
                     style={{ fontFamily: 'Lexend_900Black', fontSize: 18, letterSpacing: 0 }}
                   >
-                    TRAINER PRO
+                    BUGÜN
                   </Text>
                   <Text className="text-xs font-semibold text-on-surface-variant">
-                    TODAY / {formatDate(new Date()).toUpperCase()}
+                    BUGÜN / {formatDate(new Date()).toUpperCase()}
                   </Text>
                 </View>
               </View>
@@ -168,17 +170,17 @@ export default function TodayActivityScreen() {
                     letterSpacing: 0,
                   }}
                 >
-                  Schedule Detail
+                  Program Detayı
                 </Text>
                 <View className="mt-3 flex-row gap-2">
                   <View className="rounded-sm bg-surface-container-highest px-3 py-1">
                     <Text className="text-xs font-bold text-on-surface-variant">
-                      {bookedCount} SLOTS BOOKED
+                      {bookedCount} DOLU SAAT
                     </Text>
                   </View>
                   <View className="rounded-sm bg-primary px-3 py-1">
                     <Text className="text-xs font-bold text-on-primary">
-                      {availableCount} AVAILABLE
+                      {availableCount} UYGUN
                     </Text>
                   </View>
                 </View>
@@ -195,9 +197,9 @@ export default function TodayActivityScreen() {
         ListEmptyComponent={
           <View className="mt-10 items-center border border-outline-variant bg-surface-container-lowest p-8">
             <Ionicons name="calendar-clear-outline" size={44} color="#9a9078" />
-            <Text className="mt-3 text-base font-bold text-on-background">No activity today</Text>
+            <Text className="mt-3 text-base font-bold text-on-background">Bugün aktivite yok</Text>
             <Text className="mt-1 text-center text-sm text-on-surface-variant">
-              Add availability from your schedule to start filling the day.
+              Günü doldurmak için takviminden uygun saat ekle.
             </Text>
           </View>
         }
@@ -235,9 +237,9 @@ function ActivityRow({ row }: { row: TodayRow }) {
         {isBooked ? (
           <>
             <Text className="mb-1 text-xs font-bold uppercase text-primary">
-              Booked - {row.appointment?.memberName ?? 'Member'}
+              Rezerve - {row.appointment?.memberName ?? 'Üye'}
             </Text>
-            <Text className="text-lg font-bold text-on-surface">Training Session</Text>
+            <Text className="text-lg font-bold text-on-surface">Antrenman Seansı</Text>
             <Text className="mt-1 text-xs text-on-surface-variant">
               {formatTime(start)} - {formatTime(end)}
             </Text>
@@ -245,7 +247,7 @@ function ActivityRow({ row }: { row: TodayRow }) {
         ) : (
           <>
             <Text className="text-base font-bold italic text-outline">
-              {isPast ? 'Expired availability' : 'Available'}
+              {isPast ? 'Süresi geçmiş uygunluk' : 'Uygun'}
             </Text>
             <Text className="mt-1 text-xs text-on-surface-variant">
               {formatTime(start)} - {formatTime(end)}
@@ -286,3 +288,4 @@ function ActivityRow({ row }: { row: TodayRow }) {
     </View>
   );
 }
+

@@ -13,6 +13,7 @@ import {
 import { Calendar, type DateData } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import {
   deleteMySlot,
   getMyAppointments,
@@ -88,7 +89,7 @@ export default function MyScheduleScreen() {
       setSlotsState(slotRes);
       setAppointments(appointmentRes);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load schedule.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Takvim yüklenemedi.');
     }
   }, []);
 
@@ -186,7 +187,7 @@ export default function MyScheduleScreen() {
   const handleMakeAvailable = async (hour: number) => {
     const { start, end } = buildSlotDate(hour);
     if (end.getTime() <= Date.now()) {
-      Alert.alert('Invalid time', 'You cannot create a slot in the past.');
+      Alert.alert('Geçersiz saat', 'Geçmiş bir saate aralık açamazsın.');
       return;
     }
     try {
@@ -194,7 +195,7 @@ export default function MyScheduleScreen() {
       await setMySlots([{ slotStart: start.toISOString(), slotEnd: end.toISOString() }]);
       await load();
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Failed to add slot.');
+      Alert.alert('Hata', err?.response?.data?.message ?? err?.message ?? 'Saat aralığı eklenemedi.');
     } finally {
       setPendingHour(null);
     }
@@ -203,7 +204,7 @@ export default function MyScheduleScreen() {
   const handleMarkBlocked = async (hour: number) => {
     const { start, end } = buildSlotDate(hour);
     if (end.getTime() <= Date.now()) {
-      Alert.alert('Invalid time', 'You cannot block a past slot.');
+      Alert.alert('Geçersiz saat', 'Geçmiş bir saati kapatamazsın.');
       return;
     }
     try {
@@ -217,7 +218,7 @@ export default function MyScheduleScreen() {
       }
       await load();
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Failed to block slot.');
+      Alert.alert('Hata', err?.response?.data?.message ?? err?.message ?? 'Saat kapatılamadı.');
     } finally {
       setPendingHour(null);
     }
@@ -225,12 +226,12 @@ export default function MyScheduleScreen() {
 
   const handleRemoveAvailable = (slot: AvailabilityDto, hour: number) => {
     Alert.alert(
-      'Remove availability?',
-      `Members will no longer be able to book ${String(hour).padStart(2, '0')}:00.`,
+      'Uygunluk kaldırılsın mı?',
+      `Üyeler artık ${String(hour).padStart(2, '0')}:00 saatini rezerve edemeyecek.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Vazgeç', style: 'cancel' },
         {
-          text: 'Remove',
+          text: 'Kaldır',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -238,7 +239,7 @@ export default function MyScheduleScreen() {
               await deleteMySlot(slot.id);
               await load();
             } catch (err: any) {
-              Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Failed to remove slot.');
+              Alert.alert('Hata', err?.response?.data?.message ?? err?.message ?? 'Saat aralığı kaldırılamadı.');
             } finally {
               setPendingHour(null);
             }
@@ -256,7 +257,7 @@ export default function MyScheduleScreen() {
       await deleteMySlot(slot.id);
       await load();
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Failed to unblock slot.');
+      Alert.alert('Hata', err?.response?.data?.message ?? err?.message ?? 'Saat açılamadı.');
     } finally {
       setPendingHour(null);
     }
@@ -282,12 +283,12 @@ export default function MyScheduleScreen() {
       case 'manualBooked':
         if (entry.slot) {
           Alert.alert(
-            'Blocked slot',
-            'This slot is marked as unavailable. Unblock it to make it available again.',
+            'Kapalı saat',
+            'Bu saat uygun değil olarak işaretli. Tekrar uygun yapmak için aç.',
             [
-              { text: 'Cancel', style: 'cancel' },
+              { text: 'Vazgeç', style: 'cancel' },
               {
-                text: 'Unblock',
+                text: 'Aç',
                 onPress: () => entry.slot && handleUnblock(entry.slot, entry.hour),
               },
             ]
@@ -304,12 +305,12 @@ export default function MyScheduleScreen() {
     if (pendingHour !== null) return;
     if (entry.status !== 'empty') return;
     Alert.alert(
-      'Block this slot?',
-      `Mark ${String(entry.hour).padStart(2, '0')}:00 as unavailable (e.g. break, personal). Members won't see it.`,
+      'Bu saat kapatılsın mı?',
+      `${String(entry.hour).padStart(2, '0')}:00 uygun değil olarak işaretlenecek. Üyeler bu saati görmeyecek.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Vazgeç', style: 'cancel' },
         {
-          text: 'Block',
+          text: 'Kapat',
           style: 'destructive',
           onPress: () => handleMarkBlocked(entry.hour),
         },
@@ -327,6 +328,7 @@ export default function MyScheduleScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
+      <AthletixHeader />
       <ScrollView
         contentContainerClassName="pb-10"
         refreshControl={
@@ -335,15 +337,6 @@ export default function MyScheduleScreen() {
       >
         {/* Header */}
         <View className="px-5 pt-2 pb-4">
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="flash" size={18} color={COLORS.primary} />
-            <Text
-              className="text-on-background"
-              style={{ fontFamily: 'Lexend_900Black', letterSpacing: 1.5, fontSize: 14 }}
-            >
-              IRON PULSE
-            </Text>
-          </View>
           <Text
             className="mt-3 text-on-background"
             style={{
@@ -353,13 +346,13 @@ export default function MyScheduleScreen() {
               lineHeight: 32,
             }}
           >
-            My Schedule
+            Takvimim
           </Text>
           <Text
             className="mt-1 text-on-surface-variant"
             style={{ fontFamily: 'Inter_400Regular', fontSize: 13 }}
           >
-            Tap a slot to make it available · long-press to block
+            Uygun yapmak için saate dokun, kapatmak için basılı tut
           </Text>
         </View>
 
@@ -404,7 +397,7 @@ export default function MyScheduleScreen() {
             className="text-on-surface-variant"
             style={{ fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 1.5 }}
           >
-            SELECTED
+            SEÇILI
           </Text>
           <Text
             className="mt-1 text-on-background"
@@ -434,12 +427,12 @@ export default function MyScheduleScreen() {
             className="mb-3 text-on-surface-variant"
             style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.5 }}
           >
-            LEGEND
+            AÇIKLAMA
           </Text>
-          <LegendRow color={COLORS.primary} label="Available · members can book" />
-          <LegendRow color={COLORS.surfaceHigh} label="Booked by member · tap for details" outlined />
-          <LegendRow color={COLORS.bookedBg} label="Blocked by you · tap to unblock" outlined />
-          <LegendRow color="transparent" label="Empty · tap to open, long-press to block" outlined isLast />
+          <LegendRow color={COLORS.primary} label="Uygun - üyeler rezerve edebilir" />
+          <LegendRow color={COLORS.surfaceHigh} label="Üye tarafindan rezerve - detay için dokun" outlined />
+          <LegendRow color={COLORS.bookedBg} label="Sen kapattin - açmak için dokun" outlined />
+          <LegendRow color="transparent" label="Boş - açmak için dokun, kapatmak için basılı tut" outlined isLast />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -495,7 +488,7 @@ function TimeSlot({ entry, pending, onPress, onLongPress }: TimeSlotProps) {
             letterSpacing: 1.2,
           }}
         >
-          {pending ? 'WORKING…' : visuals.label}
+          {pending ? 'İŞLENİYOR...' : visuals.label}
         </Text>
         {pending && <ActivityIndicator size="small" color={visuals.iconColor} />}
       </View>
@@ -539,7 +532,7 @@ function getSlotVisuals(status: SlotStatus): SlotVisuals {
         labelColor: COLORS.onPrimary,
         iconColor: COLORS.onPrimary,
         icon: 'flash',
-        label: 'AVAILABLE',
+        label: 'UYGUN',
       };
     case 'memberBooked':
       return {
@@ -551,7 +544,7 @@ function getSlotVisuals(status: SlotStatus): SlotVisuals {
         labelColor: COLORS.primary,
         iconColor: COLORS.primary,
         icon: 'person',
-        label: 'BOOKED',
+        label: 'DOLU',
       };
     case 'manualBooked':
       return {
@@ -564,7 +557,7 @@ function getSlotVisuals(status: SlotStatus): SlotVisuals {
         labelColor: COLORS.textMuted,
         iconColor: COLORS.textMuted,
         icon: 'lock-closed',
-        label: 'BLOCKED',
+        label: 'KAPALI',
       };
     case 'past':
       return {
@@ -577,7 +570,7 @@ function getSlotVisuals(status: SlotStatus): SlotVisuals {
         timeColor: COLORS.textMuted,
         labelColor: COLORS.textMuted,
         iconColor: COLORS.textMuted,
-        label: 'PAST',
+        label: 'GEÇTİ',
       };
     case 'empty':
     default:
@@ -591,7 +584,7 @@ function getSlotVisuals(status: SlotStatus): SlotVisuals {
         labelColor: COLORS.textMuted,
         iconColor: COLORS.textMuted,
         icon: 'add',
-        label: 'TAP TO OPEN',
+        label: 'AÇMAK ICIN DOKUN',
       };
   }
 }
@@ -627,3 +620,4 @@ function LegendRow({
     </View>
   );
 }
+

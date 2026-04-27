@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { getConversations, ROLE, type ConversationDto } from '@/lib/api';
 import { chatConnection } from '@/lib/chat-connection';
@@ -52,7 +53,7 @@ export default function MessagesScreen() {
       const data = await getConversations();
       setItems(data);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Yüklenemedi.');
     }
   }, []);
 
@@ -101,9 +102,10 @@ export default function MessagesScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <View className="px-5 pb-3 pt-2">
-        <Text className="text-sm text-on-surface-variant">Inbox</Text>
-        <Text className="text-3xl font-bold text-on-background">Messages</Text>
+      <AthletixHeader />
+      <View className="px-5 pb-3 pt-5">
+        <Text className="text-sm text-on-surface-variant">Mesajlar</Text>
+        <Text className="text-3xl font-bold text-on-background">Gelen Kutusu</Text>
       </View>
 
       {error && (
@@ -124,10 +126,10 @@ export default function MessagesScreen() {
           <View className="mt-12 items-center px-6">
             <Ionicons name="chatbubbles-outline" size={48} color="#9a9078" />
             <Text className="mt-2 text-center text-sm text-on-surface-variant">
-              No conversations yet.{'\n'}
+              Henüz sohbet yok.{'\n'}
               {user?.role === ROLE.PT
-                ? 'Send a message to a member to start chatting.'
-                : 'Your trainer will reach out soon.'}
+                ? 'Sohbet baslatmak için bir üyeye mesaj gönder.'
+                : 'Antrenörun yakinda sana ulasacak.'}
             </Text>
           </View>
         }
@@ -173,3 +175,4 @@ export default function MessagesScreen() {
     </SafeAreaView>
   );
 }
+

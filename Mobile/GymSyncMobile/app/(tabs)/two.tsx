@@ -1,16 +1,17 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_BASE_URL, ROLE } from '@/lib/api';
 
 const ROLE_NAMES: Record<number, string> = {
   0: 'Admin',
-  1: 'Personal Trainer',
-  2: 'Member',
+  1: 'Kişisel Antrenör',
+  2: 'Üye',
 };
 
 export default function ProfileScreen() {
@@ -26,10 +27,10 @@ export default function ProfileScreen() {
       level,
       title:
         user.role === ROLE.PT
-          ? 'Elite Coach'
+          ? 'Elit Antrenör'
           : user.role === ROLE.Admin
-            ? 'Operations Lead'
-            : 'Elite Powerlifter',
+            ? 'Operasyon Lideri'
+            : 'Elit Powerlifter',
       weeklyHours,
       streak: user.role === ROLE.Member ? Math.min(12, usedCredits + 1) : 5,
       volume: user.role === ROLE.Member ? `${Math.max(4, usedCredits * 2)}k` : '24k',
@@ -44,7 +45,7 @@ export default function ProfileScreen() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      Alert.alert('Copy failed', 'Could not copy to clipboard.');
+      Alert.alert('Kopyalanamadı', 'Panoya kopyalanamadi.');
     }
   };
 
@@ -57,20 +58,13 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <View className="flex-row items-center justify-between border-b border-outline-variant bg-black px-5 py-4">
-        <Pressable className="h-9 w-9 items-center justify-center active:opacity-70">
-          <Ionicons name="menu" size={28} color="#facc15" />
-        </Pressable>
-        <Text
-          className="text-2xl italic text-primary"
-          style={{ fontFamily: 'Lexend_900Black', letterSpacing: 0 }}
-        >
-          STRIVE
-        </Text>
-        <View className="h-8 w-8 items-center justify-center rounded-full border border-primary bg-surface-container">
+      <AthletixHeader
+        right={
+          <View className="h-9 w-9 items-center justify-center rounded-sm border border-primary bg-surface-container">
           <Text className="text-xs font-bold text-primary">{initials.slice(0, 1)}</Text>
-        </View>
-      </View>
+          </View>
+        }
+      />
 
       <ScrollView contentContainerClassName="gap-8 px-5 pb-28 pt-6">
         <View className="relative items-center">
@@ -115,7 +109,7 @@ export default function ProfileScreen() {
         </View>
 
         <View className="gap-3">
-          <SectionLabel title="Weekly Output" />
+          <SectionLabel title="Haftalık Performans" />
           <View className="rounded-sm border border-outline-variant bg-surface-container-low p-4">
             <View className="mb-6 flex-row items-end justify-between">
               <View className="flex-row items-baseline">
@@ -125,10 +119,10 @@ export default function ProfileScreen() {
                 >
                   {profileStats.weeklyHours}
                 </Text>
-                <Text className="ml-1 text-base text-on-surface-variant">hrs</Text>
+                <Text className="ml-1 text-base text-on-surface-variant">saat</Text>
               </View>
               <View className="rounded-sm bg-primary/10 px-2 py-1">
-                <Text className="text-xs font-semibold text-primary">+12% vs last</Text>
+              <Text className="text-xs font-semibold text-primary">Önceki haftaya göre +12%</Text>
               </View>
             </View>
             <View className="h-24 flex-row items-end gap-2">
@@ -153,28 +147,28 @@ export default function ProfileScreen() {
           </View>
 
           <View className="flex-row gap-3">
-            <MiniStat icon="flame-outline" value={String(profileStats.streak)} label="Day Streak" />
+            <MiniStat icon="flame-outline" value={String(profileStats.streak)} label="Gün Serisi" />
             <MiniStat icon="barbell-outline" value={profileStats.volume} label="Vol (Lbs)" />
           </View>
         </View>
 
         <View className="gap-3">
-          <SectionLabel title="Badges" />
+          <SectionLabel title="Rozetler" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-3">
             <Badge icon="ribbon" label="1000 Club" />
-            <Badge icon="timer" label="Early Bird" />
+            <Badge icon="timer" label="Erkenci" />
             <Badge icon="lock-closed" label="Iron Man" locked />
             <Badge icon="lock-closed" label="Century" locked />
           </ScrollView>
         </View>
 
         <View className="gap-3">
-          <SectionLabel title="Personal Records" />
+          <SectionLabel title="Kişisel Rekorlar" />
           <View className="overflow-hidden rounded-sm border border-outline-variant bg-surface-container-low">
             <RecordRow label="Max Squat" value="405" unit="lbs" highlight />
             <RecordRow label="Deadlift" value="495" unit="lbs" highlight />
             <RecordRow label="Bench Press" value="275" unit="lbs" />
-            <RecordRow label="Fastest 5K" value="21:45" isLast />
+            <RecordRow label="En Hızlı 5K" value="21:45" isLast />
           </View>
         </View>
 
@@ -190,7 +184,7 @@ export default function ProfileScreen() {
         >
           <View className="flex-row items-center justify-between">
             <Text className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">
-              My Access Key
+              Giriş Anahtarım
             </Text>
             <Ionicons
               name={copied ? 'checkmark-circle' : 'copy-outline'}
@@ -206,17 +200,17 @@ export default function ProfileScreen() {
             {user.uniqueAccessKey}
           </Text>
           <Text className="mt-2 text-xs text-on-surface-variant">
-            {copied ? 'Copied to clipboard.' : 'Tap to copy. Keep this safe.'}
+            {copied ? 'Panoya kopyalandı.' : 'Kopyalamak için dokun. Güvende tut.'}
           </Text>
         </Pressable>
 
         <View className="rounded-sm border border-outline-variant bg-surface-container p-4">
-          <SectionLabel title="Account" />
-          <InfoRow label="Email" value={user.email} />
-          <InfoRow label="Phone" value={user.phoneNumber || '-'} />
-          <InfoRow label="Credits" value={`${user.remainingCredits}/${user.totalCredits}`} />
-          <InfoRow label="Member since" value={new Date(user.createdAt).toLocaleDateString()} />
-          <InfoRow label="API endpoint" value={API_BASE_URL} isLast />
+          <SectionLabel title="Hesap" />
+          <InfoRow label="E-posta" value={user.email} />
+          <InfoRow label="Telefon" value={user.phoneNumber || '-'} />
+          <InfoRow label="Kredi" value={`${user.remainingCredits}/${user.totalCredits}`} />
+          <InfoRow label="Kayıt tarihi" value={new Date(user.createdAt).toLocaleDateString()} />
+          <InfoRow label="API adresi" value={API_BASE_URL} isLast />
         </View>
 
         <Pressable
@@ -224,7 +218,7 @@ export default function ProfileScreen() {
           className="flex-row items-center justify-center rounded-sm border border-accent-red/40 bg-surface-container p-4 active:bg-surface-container-high"
         >
           <Ionicons name="log-out-outline" size={20} color="#ffb4ab" />
-          <Text className="ml-2 text-sm font-bold tracking-wider text-accent-red">SIGN OUT</Text>
+          <Text className="ml-2 text-sm font-bold tracking-wider text-accent-red">ÇIKIŞ YAP</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -338,3 +332,4 @@ function InfoRow({ label, value, isLast }: { label: string; value: string; isLas
     </View>
   );
 }
+

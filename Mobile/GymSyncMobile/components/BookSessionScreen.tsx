@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   bookAppointment,
@@ -69,7 +70,7 @@ function formatDateCard(date: Date) {
 }
 
 function trainerSpecialty(index: number): string {
-  const labels = ['Strength Coach', 'HIIT Specialist', 'Mobility Pro', 'Performance PT'];
+  const labels = ['Güç Antrenöru', 'HIIT Uzmani', 'Mobilite Uzmani', 'Performans PT'];
   return labels[index % labels.length];
 }
 
@@ -116,7 +117,7 @@ export default function BookSessionScreen() {
         setSlots(slotRes);
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load booking.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Randevu ekranı yüklenemedi.');
     }
   }, []);
 
@@ -181,7 +182,7 @@ export default function BookSessionScreen() {
       setError(null);
       await Promise.all([loadSlots(selectedTrainer.id), loadAppointments()]);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Refresh failed.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Yenileme başarısız.');
     } finally {
       setRefreshing(false);
     }
@@ -196,7 +197,7 @@ export default function BookSessionScreen() {
       setError(null);
       await loadSlots(trainer.id);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load slots.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Saat aralıkları yüklenemedi.');
     } finally {
       setLoadingSlots(false);
     }
@@ -204,19 +205,19 @@ export default function BookSessionScreen() {
 
   const confirmBooking = async () => {
     if (!selectedSlot || !selectedTrainer) {
-      Alert.alert('Select a time', 'Choose an available time slot before confirming.');
+      Alert.alert('Saat seç', 'Onaylamadan önce uygun bir saat aralığı seç.');
       return;
     }
 
     Alert.alert(
-      'Confirm booking',
-      `${selectedTrainer.fullName}\n${formatFullDate(selectedSlot.slotStart)} at ${formatTime(
+      'Rezervasyonu onayla',
+      `${selectedTrainer.fullName}\n${formatFullDate(selectedSlot.slotStart)} - ${formatTime(
         selectedSlot.slotStart,
-      )}\n\n1 credit will be used.`,
+      )}\n\n1 kredi kullanılacak.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Vazgeç', style: 'cancel' },
         {
-          text: 'Confirm',
+          text: 'Onayla',
           onPress: async () => {
             try {
               setBooking(true);
@@ -228,10 +229,10 @@ export default function BookSessionScreen() {
                 ),
               );
               await Promise.all([refreshUser(), loadAppointments()]);
-              Alert.alert('Booked!', `Remaining credits: ${res.remainingCredits}`);
+              Alert.alert('Rezerve edildi!', `Kalan kredi: ${res.remainingCredits}`);
             } catch (err: any) {
-              const msg = err?.response?.data?.message ?? err?.message ?? 'Booking failed.';
-              Alert.alert('Booking failed', msg);
+              const msg = err?.response?.data?.message ?? err?.message ?? 'Rezervasyon yapılamadı.';
+              Alert.alert('Rezervasyon başarısız', msg);
             } finally {
               setBooking(false);
             }
@@ -251,24 +252,16 @@ export default function BookSessionScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-black">
-      <View className="flex-row items-center justify-between border-b border-outline-variant px-5 py-4">
-        <View className="flex-row items-center gap-4">
-          <Pressable onPress={() => router.back()} className="active:opacity-70">
-            <Ionicons name="arrow-back" size={24} color="#facc15" />
-          </Pressable>
-          <Text
-            className="text-xl text-primary"
-            style={{ fontFamily: 'Lexend_900Black', letterSpacing: 0 }}
-          >
-            BOOK A TRAINER
-          </Text>
-        </View>
-        <View className="h-10 w-10 items-center justify-center rounded-full border border-outline-variant bg-surface-container">
-          <Text className="text-sm font-bold text-primary">
-            {user?.fullName?.charAt(0).toUpperCase() ?? 'U'}
-          </Text>
-        </View>
-      </View>
+      <AthletixHeader
+        onBack={() => router.back()}
+        right={
+          <View className="h-10 w-10 items-center justify-center rounded-sm border border-outline-variant bg-surface-container">
+            <Text className="text-sm font-bold text-primary">
+              {user?.fullName?.charAt(0).toUpperCase() ?? 'U'}
+            </Text>
+          </View>
+        }
+      />
 
       <ScrollView
         contentContainerClassName="pb-44"
@@ -282,7 +275,7 @@ export default function BookSessionScreen() {
           </View>
         )}
 
-        <SectionHeader title="EXPERT TRAINERS" action="VIEW ALL" />
+        <SectionHeader title="UZMAN ANTRENÖRLER" action="TÜMÜ" />
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -320,7 +313,7 @@ export default function BookSessionScreen() {
           })}
         </ScrollView>
 
-        <SectionHeader title="SELECT DATE" />
+        <SectionHeader title="TARİH SEÇ" />
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -359,7 +352,7 @@ export default function BookSessionScreen() {
           })}
         </ScrollView>
 
-        <SectionHeader title="TIME SLOTS" />
+        <SectionHeader title="SAATLER" />
         {loadingSlots ? (
           <ActivityIndicator className="mt-6" size="large" color="#facc15" />
         ) : (
@@ -368,7 +361,7 @@ export default function BookSessionScreen() {
               <View className="w-full items-center border border-outline-variant bg-surface-container-lowest p-6">
                 <Ionicons name="time-outline" size={34} color="#9a9078" />
                 <Text className="mt-2 text-sm text-on-surface-variant">
-                  No available slots for this date.
+                  Bu tarihte uygun saat yok.
                 </Text>
               </View>
             ) : (
@@ -398,18 +391,18 @@ export default function BookSessionScreen() {
           </View>
         )}
 
-        <SectionHeader title="SESSION DETAILS" />
+        <SectionHeader title="SEANS DETAYLARI" />
         <View className="mx-5 rounded-sm border border-outline-variant bg-surface-container-high p-5">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-4">
               <Text className="mb-1 text-xs font-bold uppercase tracking-widest text-primary">
-                SESSION DETAILS
+                SEANS DETAYLARI
               </Text>
               <Text
                 className="text-2xl text-on-background"
                 style={{ fontFamily: 'Lexend_800ExtraBold', lineHeight: 28 }}
               >
-                STRENGTH & HYPERTROPHY
+                GÜÇ & HİPERTROFİ
               </Text>
             </View>
             <View className="rounded-sm bg-surface-container-highest p-2">
@@ -417,18 +410,18 @@ export default function BookSessionScreen() {
             </View>
           </View>
           <View className="mt-4 flex-row gap-5">
-            <DetailPill icon="time-outline" label="60 MINS" />
-            <DetailPill icon="flash-outline" label="HIGH INTENSITY" />
+            <DetailPill icon="time-outline" label="60 DK" />
+            <DetailPill icon="flash-outline" label="YÜKSEK TEMPO" />
           </View>
         </View>
 
-        <SectionHeader title="ACTIVE RESERVATIONS" />
+        <SectionHeader title="AKTİF REZERVASYONLAR" />
         <View className="mx-5 gap-2">
           {activeReservations.length === 0 ? (
             <View className="items-center border border-outline-variant bg-surface-container-lowest p-6">
               <Ionicons name="calendar-clear-outline" size={34} color="#9a9078" />
               <Text className="mt-2 text-sm text-on-surface-variant">
-                You have no upcoming reservations.
+                Yaklaşan rezervasyonun yok.
               </Text>
             </View>
           ) : (
@@ -469,7 +462,7 @@ export default function BookSessionScreen() {
         <View className="mb-4 flex-row items-center justify-between">
           <View>
             <Text className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              TOTAL AMOUNT
+              TOPLAM
             </Text>
             <Text
               className="text-2xl text-on-background"
@@ -479,9 +472,9 @@ export default function BookSessionScreen() {
             </Text>
           </View>
           <View className="items-end">
-            <Text className="text-xs text-on-surface-variant">PER SESSION</Text>
+            <Text className="text-xs text-on-surface-variant">SEANS BAŞINA</Text>
             <Text className="text-xs font-bold text-primary">
-              {user?.remainingCredits ?? 0} CREDITS LEFT
+              {user?.remainingCredits ?? 0} KREDİ KALDI
             </Text>
           </View>
         </View>
@@ -497,7 +490,7 @@ export default function BookSessionScreen() {
               className="text-xl text-black"
               style={{ fontFamily: 'Lexend_900Black', letterSpacing: 0 }}
             >
-              CONFIRM BOOKING
+              REZERVASYONU ONAYLA
             </Text>
           )}
         </Pressable>
@@ -536,3 +529,4 @@ function DetailPill({
     </View>
   );
 }
+

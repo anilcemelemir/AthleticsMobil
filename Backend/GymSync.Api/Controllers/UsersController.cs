@@ -40,6 +40,23 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Returns all active personal trainers. Admin only.
+    /// </summary>
+    [HttpGet("trainers")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTrainers()
+    {
+        var trainers = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.Role == UserRole.PT && u.IsActive)
+            .OrderBy(u => u.FullName)
+            .ToListAsync();
+
+        return Ok(_mapper.Map<List<UserDto>>(trainers));
+    }
+
+    /// <summary>
     /// Adds credits to a member. Admin only.
     /// </summary>
     [HttpPost("assign-credits")]

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
@@ -29,7 +30,7 @@ export default function LoginScreen() {
   const onSubmit = async () => {
     const trimmed = key.trim().toUpperCase();
     if (!trimmed) {
-      setError('Enter your access key.');
+      setError('Giriş anahtarını yaz.');
       return;
     }
     setError(null);
@@ -41,8 +42,8 @@ export default function LoginScreen() {
       const message =
         err?.response?.data?.message ??
         err?.response?.status === 401
-          ? 'That key is not recognized.'
-          : err?.message ?? 'Login failed. Please try again.';
+          ? 'Bu anahtar tanınmadı.'
+          : err?.message ?? 'Giriş başarısız. Lütfen tekrar dene.';
       setError(message);
     } finally {
       setSubmitting(false);
@@ -55,18 +56,7 @@ export default function LoginScreen() {
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header bar with brand */}
-        <View className="flex-row items-center justify-center border-b border-outline-variant/40 bg-surface-container-lowest px-5 py-4">
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="flash" size={22} color="#facc15" />
-            <Text
-              className="text-on-background"
-              style={{ fontFamily: 'Lexend_900Black', letterSpacing: 1.5 }}
-            >
-              IRON PULSE
-            </Text>
-          </View>
-        </View>
+        <AthletixHeader />
 
         <View className="flex-1 justify-center px-6">
           {/* Headline */}
@@ -80,13 +70,13 @@ export default function LoginScreen() {
                 letterSpacing: -0.5,
               }}
             >
-              ENTER{'\n'}YOUR KEY
+              GİRİŞ{'\n'}ANAHTARIN
             </Text>
             <Text
               className="mt-3 text-on-surface-variant"
               style={{ fontFamily: 'Inter_400Regular', fontSize: 14 }}
             >
-              Use the unique access key issued to you by your gym admin.
+              Salon yöneticisinin sana verdiği özel giriş anahtarını kullan.
             </Text>
           </View>
 
@@ -110,7 +100,7 @@ export default function LoginScreen() {
                 letterSpacing: 1.5,
               }}
             >
-              MEMBER KEY
+              ÜYE ANAHTARI
             </Text>
             <TextInput
               value={key}
@@ -173,7 +163,7 @@ export default function LoginScreen() {
                     letterSpacing: 1.2,
                   }}
                 >
-                  START YOUR JOURNEY
+                  GİRİŞ YAP
                 </Text>
                 <Ionicons
                   name="arrow-forward"
@@ -189,10 +179,11 @@ export default function LoginScreen() {
             className="mt-8 text-center text-on-surface-variant/60"
             style={{ fontFamily: 'Inter_400Regular', fontSize: 11, letterSpacing: 0.5 }}
           >
-            Don't have a key? Contact your gym admin.
+            Anahtarın yok mu? Salon yönetiçinle iletişime gec.
           </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+

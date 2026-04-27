@@ -20,6 +20,15 @@ const USER_KEY = 'gymsync.user';
 
 type User = ApiModule.UserDto;
 
+function isUnauthorizedError(err: unknown): boolean {
+  const anyErr = err as any;
+  return (
+    anyErr?.response?.status === 401 ||
+    typeof anyErr?.message === 'string' &&
+      (anyErr.message.includes('Status code') && anyErr.message.includes('401'))
+  );
+}
+
 interface AuthContextValue {
   user: User | null;
   token: string | null;
@@ -45,12 +54,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const savedToken = await getSecureItem(TOKEN_KEY);
         const savedUser = await getSecureItem(USER_KEY);
         if (savedToken && savedUser) {
-          setToken(savedToken);
-          setUser(JSON.parse(savedUser));
           ApiModule.setAuthToken(savedToken);
-          chatConnection.start(savedToken).catch((e) =>
-            console.warn('chat connect (restore) failed', e),
-          );
+          try {
+            const freshUser = await ApiModule.getCurrentUser();
+            setToken(savedToken);
+            setUser(freshUser);
+            await setSecureItem(USER_KEY, JSON.stringify(freshUser));
+            chatConnection.start(savedToken).catch((e) => {
+              if (!isUnauthorizedError(e)) {
+                console.warn('chat connect (restore) failed', e);
+              }
+            });
+          } catch (err) {
+            await chatConnection.stop();
+            ApiModule.setAuthToken(null);
+            setToken(null);
+            setUser(null);
+            await deleteSecureItem(TOKEN_KEY);
+            await deleteSecureItem(USER_KEY);
+            if (!isUnauthorizedError(err)) {
+              console.warn('Failed to validate restored session', err);
+            }
+          }
         }
       } catch (err) {
         console.warn('Failed to restore session', err);

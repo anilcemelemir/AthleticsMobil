@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { getChatHistory, sendChatMessage, type MessageDto } from '@/lib/api';
 import { chatConnection } from '@/lib/chat-connection';
@@ -41,7 +42,7 @@ export default function ChatScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ userId: string; name?: string }>();
   const otherUserId = Number(params.userId);
-  const otherName = (params.name as string) ?? 'Chat';
+  const otherName = (params.name as string) ?? 'Sohbet';
   const { user } = useAuth();
   const myId = user?.id ?? 0;
 
@@ -159,13 +160,8 @@ export default function ChatScreen() {
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View className="flex-row items-center border-b border-outline-variant bg-surface-container px-4 py-3">
-        <Pressable
-          onPress={() => router.back()}
-          className="mr-2 h-9 w-9 items-center justify-center rounded-full active:bg-surface-container-high"
-        >
-          <Ionicons name="chevron-back" size={22} color="#ebe2d0" />
-        </Pressable>
+      <AthletixHeader onBack={() => router.back()} />
+      <View className="flex-row items-center border-b border-outline-variant/40 bg-surface-container px-4 py-3">
         <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-primary/10">
           <Text className="text-sm font-bold text-primary">
             {otherName.charAt(0).toUpperCase()}
@@ -176,7 +172,7 @@ export default function ChatScreen() {
             {otherName}
           </Text>
           <Text className="text-xs text-on-surface-variant">
-            {otherTyping ? 'Typing…' : 'Online'}
+            {otherTyping ? 'Yazıyor...' : 'Çevrim ici'}
           </Text>
         </View>
       </View>
@@ -198,7 +194,7 @@ export default function ChatScreen() {
             ListEmptyComponent={
               <View className="mt-12 items-center">
                 <Ionicons name="chatbox-outline" size={48} color="#9a9078" />
-                <Text className="mt-2 text-sm text-on-surface-variant">Say hi 👋</Text>
+                <Text className="mt-2 text-sm text-on-surface-variant">Merhaba de</Text>
               </View>
             }
             renderItem={({ item, index }) => {
@@ -249,7 +245,7 @@ export default function ChatScreen() {
               otherTyping ? (
                 <View className="my-1 flex-row justify-start">
                   <View className="rounded-2xl rounded-bl-md bg-surface-container px-3.5 py-2 shadow-sm">
-                    <Text className="text-sm italic text-on-surface-variant">Typing…</Text>
+                    <Text className="text-sm italic text-on-surface-variant">Yazıyor...</Text>
                   </View>
                 </View>
               ) : null
@@ -261,7 +257,7 @@ export default function ChatScreen() {
           <TextInput
             value={text}
             onChangeText={onChangeText}
-            placeholder="Type a message…"
+            placeholder="Mesaj yaz..."
             placeholderTextColor="#9a9078"
             multiline
             className="max-h-32 flex-1 rounded-2xl bg-surface-container-high px-4 py-2.5 text-[15px] text-on-background"
@@ -282,3 +278,4 @@ export default function ChatScreen() {
     </SafeAreaView>
   );
 }
+

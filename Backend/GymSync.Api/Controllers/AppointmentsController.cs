@@ -142,9 +142,12 @@ public class AppointmentsController : ControllerBase
             .Include(a => a.PT)
             .Include(a => a.Availability);
 
-        query = roleClaim == nameof(UserRole.PT)
-            ? query.Where(a => a.PTId == userId)
-            : query.Where(a => a.MemberId == userId);
+        query = roleClaim switch
+        {
+            nameof(UserRole.Admin) => query,
+            nameof(UserRole.PT) => query.Where(a => a.PTId == userId),
+            _ => query.Where(a => a.MemberId == userId)
+        };
 
         var list = await query
             .OrderByDescending(a => a.AppointmentDate)

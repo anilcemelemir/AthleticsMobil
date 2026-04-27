@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -6,7 +6,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   Text,
@@ -15,28 +17,33 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   assignCredits,
   bulkSendMessage,
   getMembers,
+  getMyAppointments,
+  getTrainerUsers,
   register,
   ROLE,
+  type AppointmentDto,
   type UserDto,
 } from '@/lib/api';
 
 const PRESET_AMOUNTS = [8, 12];
+type AdminView = 'members' | 'trainers' | 'appointments';
 
 function getCreditTone(remaining: number) {
-  if (remaining <= 1) return { label: 'LOW', color: '#ffb4ab' };
-  if (remaining <= 4) return { label: 'WATCH', color: '#fbbf24' };
-  return { label: 'OK', color: '#86efac' };
+  if (remaining <= 1) return { label: 'AZ', color: '#ffb4ab' };
+  if (remaining <= 4) return { label: 'DİKKAT', color: '#fbbf24' };
+  return { label: 'İYİ', color: '#86efac' };
 }
 
 /**
- * Admin / PT management screen — IRON PULSE dark theme.
+ * Admin / PT management screen â€” IRON PULSE dark theme.
  * Admin sees: member list with access keys, can add credits, bulk-message,
- *   and (most importantly) onboard new members → shows generated key in
+ *   and (most importantly) onboard new members â†’ shows generated key in
  *   a large success modal.
  * PT sees: client list, can chat directly.
  */
@@ -47,6 +54,9 @@ export default function ManagementScreen() {
   const isPt = user?.role === ROLE.PT;
 
   const [members, setMembers] = useState<UserDto[]>([]);
+  const [trainers, setTrainers] = useState<UserDto[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
+  const [adminView, setAdminView] = useState<AdminView>('members');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,29 +83,40 @@ export default function ManagementScreen() {
   const [createdKey, setCreatedKey] = useState<{ name: string; key: string } | null>(null);
   const [keyCopied, setKeyCopied] = useState(false);
 
-  const loadMembers = useCallback(async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       setError(null);
-      const list = await getMembers();
-      setMembers(list);
+      if (isAdmin) {
+        const [memberList, trainerList, appointmentList] = await Promise.all([
+          getMembers(),
+          getTrainerUsers(),
+          getMyAppointments(),
+        ]);
+        setMembers(memberList);
+        setTrainers(trainerList);
+        setAppointments(appointmentList);
+      } else {
+        const list = await getMembers();
+        setMembers(list);
+      }
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load members.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Dashboard yüklenemedi.');
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      await loadMembers();
+      await loadDashboard();
       setLoading(false);
     })();
-  }, [loadMembers]);
+  }, [loadDashboard]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadMembers();
+    await loadDashboard();
     setRefreshing(false);
-  }, [loadMembers]);
+  }, [loadDashboard]);
 
   const closeCreditModal = () => {
     setSelected(null);
@@ -106,7 +127,7 @@ export default function ManagementScreen() {
   const handleAssign = async (amount: number) => {
     if (!selected) return;
     if (!Number.isFinite(amount) || amount <= 0) {
-      Alert.alert('Invalid amount', 'Please enter a positive number.');
+      Alert.alert('Geçersiz miktar', 'Lütfen pozitif bir sayı gir.');
       return;
     }
     try {
@@ -120,10 +141,10 @@ export default function ManagementScreen() {
         ),
       );
       closeCreditModal();
-      Alert.alert('Credits assigned', res.message);
+      Alert.alert('Kredi eklendi', res.message);
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.message ?? 'Failed to assign credits.';
-      Alert.alert('Error', msg);
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Kredi eklenemedi.';
+      Alert.alert('Hata', msg);
       setSubmitting(false);
     }
   };
@@ -148,7 +169,8 @@ export default function ManagementScreen() {
   };
 
   const selectAll = () => {
-    setSelectedIds(new Set(members.map((m) => m.id)));
+    const contacts = adminView === 'trainers' ? trainers : members;
+    setSelectedIds(new Set(contacts.map((m) => m.id)));
   };
 
   const handleBulkSend = async () => {
@@ -162,13 +184,13 @@ export default function ManagementScreen() {
       setBulkText('');
       exitSelectMode();
       Alert.alert(
-        'Message sent',
-        `Delivered to ${res.sentCount} member${res.sentCount === 1 ? '' : 's'}.${
-          res.failedMemberIds.length ? `\nFailed: ${res.failedMemberIds.length}` : ''
+        'Mesaj gönderildi',
+        `${res.sentCount} üyeye iletildi.${
+          res.failedMemberIds.length ? `\nBaşarısız: ${res.failedMemberIds.length}` : ''
         }`,
       );
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Bulk send failed.');
+      Alert.alert('Hata', err?.response?.data?.message ?? err?.message ?? 'Toplu mesaj gönderilemedi.');
     } finally {
       setBulkSending(false);
     }
@@ -193,7 +215,7 @@ export default function ManagementScreen() {
   const handleCreateMember = async () => {
     const fullName = newName.trim();
     if (!fullName) {
-      setCreateError('Full name is required.');
+      setCreateError('Ad soyad zorunlu.');
       return;
     }
     try {
@@ -208,10 +230,10 @@ export default function ManagementScreen() {
       resetAddForm();
       setCreatedKey({ name: res.user.fullName, key: res.accessKey });
       // Refresh list so the new member appears.
-      loadMembers();
+      loadDashboard();
     } catch (err: any) {
       setCreateError(
-        err?.response?.data?.message ?? err?.message ?? 'Failed to create member.',
+        err?.response?.data?.message ?? err?.message ?? 'Üye oluşturulamadı.',
       );
       setCreating(false);
     }
@@ -233,9 +255,29 @@ export default function ManagementScreen() {
     setKeyCopied(false);
   };
 
-  const headerTitle = isPt ? 'CLIENTS' : 'MEMBERS';
-  const headerSubtitle = isPt ? 'Personal Trainer' : 'Admin';
+  const headerTitle = isAdmin
+    ? adminView === 'members'
+      ? 'Üyeler'
+      : adminView === 'trainers'
+        ? 'PT Ekibi'
+        : 'Randevular'
+    : 'ÜYELER';
+  const headerSubtitle = isPt ? 'Üyeler' : 'Admin Dashboard';
   const selectedCount = selectedIds.size;
+  const selectedLabel = adminView === 'trainers' ? 'PT' : 'üye';
+  const totalCredits = members.reduce((total, member) => total + member.remainingCredits, 0);
+  const upcomingAppointments = appointments.filter(
+    (appointment) =>
+      new Date(appointment.slotEnd || appointment.appointmentDate).getTime() > Date.now() &&
+      appointment.status !== 'Cancelled',
+  );
+  const visibleUsers = adminView === 'trainers' ? trainers : members;
+  const visibleCount = adminView === 'appointments' ? appointments.length : visibleUsers.length;
+
+  const setView = (view: AdminView) => {
+    setAdminView(view);
+    exitSelectMode();
+  };
 
   const headerActions = useMemo(() => {
     if (selectMode) {
@@ -249,7 +291,7 @@ export default function ManagementScreen() {
               className="text-on-surface-variant"
               style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1 }}
             >
-              ALL
+              TÜMÜ
             </Text>
           </Pressable>
           <Pressable
@@ -260,7 +302,7 @@ export default function ManagementScreen() {
               className="text-on-surface-variant"
               style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1 }}
             >
-              CANCEL
+              İPTAL
             </Text>
           </Pressable>
         </View>
@@ -281,26 +323,28 @@ export default function ManagementScreen() {
               className="ml-1.5 text-on-primary"
               style={{ fontFamily: 'Lexend_700Bold', fontSize: 11, letterSpacing: 1 }}
             >
-              ADD
+              EKLE
             </Text>
           </Pressable>
         )}
-        <Pressable
-          onPress={enterSelectMode}
-          className="flex-row items-center rounded-sm border border-outline-variant bg-surface-container px-3 py-2 active:bg-surface-container-high"
-        >
-          <Ionicons name="paper-plane-outline" size={13} color="#facc15" />
-          <Text
-            className="ml-1.5 text-primary"
-            style={{ fontFamily: 'Lexend_700Bold', fontSize: 11, letterSpacing: 1 }}
+        {adminView !== 'appointments' && (
+          <Pressable
+            onPress={enterSelectMode}
+            className="flex-row items-center rounded-sm border border-outline-variant bg-surface-container px-3 py-2 active:bg-surface-container-high"
           >
-            BULK
-          </Text>
-        </Pressable>
+            <Ionicons name="paper-plane-outline" size={13} color="#facc15" />
+            <Text
+              className="ml-1.5 text-primary"
+              style={{ fontFamily: 'Lexend_700Bold', fontSize: 11, letterSpacing: 1 }}
+            >
+              TOPLU
+            </Text>
+          </Pressable>
+        )}
       </View>
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectMode, isAdmin]);
+  }, [selectMode, isAdmin, adminView, members, trainers]);
 
   if (loading) {
     return (
@@ -312,7 +356,8 @@ export default function ManagementScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <View className="flex-row items-center justify-between px-5 pb-4 pt-2">
+      <AthletixHeader />
+      <View className="flex-row items-center justify-between px-5 py-4">
         <View className="flex-1">
           <Text
             className="text-on-surface-variant"
@@ -335,11 +380,40 @@ export default function ManagementScreen() {
             className="mt-1 text-on-surface-variant"
             style={{ fontFamily: 'Inter_400Regular', fontSize: 12 }}
           >
-            {members.length} registered
+            {visibleCount} kayıtlı
           </Text>
         </View>
         {headerActions}
       </View>
+
+      {isAdmin && (
+        <View className="px-5 pb-4">
+          <View className="mb-3 flex-row gap-2">
+            <AdminStat label="Üye" value={String(members.length)} icon="people" />
+            <AdminStat label="PT" value={String(trainers.length)} icon="barbell" />
+            <AdminStat label="Randevu" value={String(upcomingAppointments.length)} icon="calendar" />
+          </View>
+          <View className="mb-3 rounded-sm border border-outline-variant bg-surface-container p-3">
+            <Text
+              className="text-on-surface-variant"
+              style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1.2 }}
+            >
+              TOPLAM KALAN KREDİ
+            </Text>
+            <Text
+              className="text-primary"
+              style={{ fontFamily: 'Lexend_900Black', fontSize: 28, lineHeight: 32 }}
+            >
+              {totalCredits}
+            </Text>
+          </View>
+          <View className="flex-row rounded-sm border border-outline-variant bg-surface-container-low p-1">
+            <SegmentButton active={adminView === 'members'} label="Üyeler" onPress={() => setView('members')} />
+            <SegmentButton active={adminView === 'trainers'} label="PT'ler" onPress={() => setView('trainers')} />
+            <SegmentButton active={adminView === 'appointments'} label="Randevular" onPress={() => setView('appointments')} />
+          </View>
+        </View>
+      )}
 
       {error && (
         <View className="mx-5 mb-3 rounded-sm border border-accent-red/40 bg-accent-red/10 p-3">
@@ -352,8 +426,31 @@ export default function ManagementScreen() {
         </View>
       )}
 
+      {adminView === 'appointments' ? (
+        <FlatList
+          data={appointments}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerClassName="px-5 pb-32"
+          ItemSeparatorComponent={() => <View className="h-2" />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#facc15" />
+          }
+          ListEmptyComponent={
+            <View className="mt-12 items-center">
+              <Ionicons name="calendar-clear-outline" size={48} color="#9a9078" />
+              <Text
+                className="mt-2 text-on-surface-variant"
+                style={{ fontFamily: 'Inter_400Regular', fontSize: 13 }}
+              >
+                Henüz randevu yok.
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => <AppointmentCard appointment={item} />}
+        />
+      ) : (
       <FlatList
-        data={members}
+        data={visibleUsers}
         keyExtractor={(item) => item.id.toString()}
         contentContainerClassName="px-5 pb-32"
         ItemSeparatorComponent={() => <View className="h-2" />}
@@ -367,18 +464,19 @@ export default function ManagementScreen() {
               className="mt-2 text-on-surface-variant"
               style={{ fontFamily: 'Inter_400Regular', fontSize: 13 }}
             >
-              No members yet.
+              Henüz kayıt yok.
             </Text>
           </View>
         }
         renderItem={({ item }) => {
+          const isTrainer = item.role === ROLE.PT;
           const tone = getCreditTone(item.remainingCredits);
           const checked = selectedIds.has(item.id);
           return (
             <Pressable
               onPress={() => {
                 if (selectMode) toggleSelect(item.id);
-                else if (isAdmin) setSelected(item);
+                else if (isAdmin && !isTrainer) setSelected(item);
                 else openChat(item);
               }}
               onLongPress={() => {
@@ -436,7 +534,31 @@ export default function ManagementScreen() {
                     <Ionicons name="chatbubble-ellipses" size={14} color="#facc15" />
                   </Pressable>
                 )}
+                {!selectMode && isAdmin && isTrainer && (
+                  <Pressable
+                    onPress={() => openChat(item)}
+                    className="ml-2 h-9 w-9 items-center justify-center rounded-sm border border-outline-variant bg-surface-container-high"
+                  >
+                    <Ionicons name="chatbubble-ellipses" size={14} color="#facc15" />
+                  </Pressable>
+                )}
                 <View className="ml-2 items-end">
+                  {isTrainer ? (
+                    <>
+                      <Ionicons name="barbell" size={18} color="#facc15" />
+                      <Text
+                        style={{
+                          fontFamily: 'Inter_500Medium',
+                          fontSize: 9,
+                          letterSpacing: 1,
+                          color: '#facc15',
+                        }}
+                      >
+                        PT
+                      </Text>
+                    </>
+                  ) : (
+                    <>
                   <Text
                     style={{
                       fontFamily: 'Lexend_800ExtraBold',
@@ -456,12 +578,15 @@ export default function ManagementScreen() {
                   >
                     {tone.label}
                   </Text>
+                    </>
+                  )}
                 </View>
               </View>
             </Pressable>
           );
         }}
       />
+      )}
 
       {/* Bulk action bar */}
       {selectMode && (
@@ -472,13 +597,13 @@ export default function ManagementScreen() {
                 className="text-on-background"
                 style={{ fontFamily: 'Lexend_700Bold', fontSize: 14 }}
               >
-                {selectedCount} selected
+                {selectedCount} seçili
               </Text>
               <Text
                 className="text-on-surface-variant"
                 style={{ fontFamily: 'Inter_400Regular', fontSize: 11 }}
               >
-                Compose a message to all of them.
+                Seçilen {selectedLabel} kayıtlarının tümüne mesaj yaz.
               </Text>
             </View>
             <Pressable
@@ -491,7 +616,7 @@ export default function ManagementScreen() {
                 className="ml-1.5 text-on-primary"
                 style={{ fontFamily: 'Lexend_700Bold', fontSize: 12, letterSpacing: 1 }}
               >
-                MESSAGE
+                MESAJ
               </Text>
             </Pressable>
           </View>
@@ -511,13 +636,13 @@ export default function ManagementScreen() {
               className="text-on-background"
               style={{ fontFamily: 'Lexend_800ExtraBold', fontSize: 20, letterSpacing: -0.3 }}
             >
-              Add credits
+              Kredi ekle
             </Text>
             <Text
               className="mt-1 text-on-surface-variant"
               style={{ fontFamily: 'Inter_400Regular', fontSize: 13 }}
             >
-              How many credits to add to{' '}
+              Kaç kredi eklensin:{' '}
               <Text className="text-on-background" style={{ fontFamily: 'Inter_600SemiBold' }}>
                 {selected?.fullName}
               </Text>
@@ -546,14 +671,14 @@ export default function ManagementScreen() {
               className="mb-2 mt-4 text-on-surface-variant"
               style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1.5 }}
             >
-              CUSTOM AMOUNT
+              ÖZEL MİKTAR
             </Text>
             <View className="flex-row gap-2">
               <TextInput
                 value={customAmount}
                 onChangeText={setCustomAmount}
                 keyboardType="number-pad"
-                placeholder="e.g. 5"
+                placeholder="Örn. 5"
                 placeholderTextColor="#6b6450"
                 editable={!submitting}
                 className="flex-1 rounded-sm border border-outline-variant bg-surface-container-low px-4 py-3 text-on-background"
@@ -568,7 +693,7 @@ export default function ManagementScreen() {
                   className="text-background"
                   style={{ fontFamily: 'Lexend_700Bold', fontSize: 12, letterSpacing: 1 }}
                 >
-                  ADD
+                  EKLE
                 </Text>
               </Pressable>
             </View>
@@ -582,7 +707,7 @@ export default function ManagementScreen() {
                 className="text-on-surface-variant"
                 style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, letterSpacing: 1 }}
               >
-                CANCEL
+                İPTAL
               </Text>
             </Pressable>
 
@@ -602,8 +727,12 @@ export default function ManagementScreen() {
         transparent
         onRequestClose={() => setBulkOpen(false)}
       >
-        <View className="flex-1 justify-end bg-black/70">
-          <View className="rounded-t-sm border-t border-outline-variant bg-surface-container p-6">
+        <KeyboardAvoidingView
+          className="flex-1 justify-end bg-black/70"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 16 : 0}
+        >
+          <View className="max-h-[82%] rounded-t-sm border-t border-outline-variant bg-surface-container p-6">
             <View className="mb-3 self-start rounded-sm bg-primary p-2">
               <Ionicons name="megaphone-outline" size={18} color="#3c2f00" />
             </View>
@@ -611,19 +740,19 @@ export default function ManagementScreen() {
               className="text-on-background"
               style={{ fontFamily: 'Lexend_800ExtraBold', fontSize: 20 }}
             >
-              Bulk message
+              Toplu mesaj
             </Text>
             <Text
               className="mt-1 text-on-surface-variant"
               style={{ fontFamily: 'Inter_400Regular', fontSize: 13 }}
             >
-              Send to {selectedCount} member{selectedCount === 1 ? '' : 's'}.
+              {selectedCount} {selectedLabel} kaydına gönder.
             </Text>
 
             <TextInput
               value={bulkText}
               onChangeText={setBulkText}
-              placeholder="Type your announcement…"
+              placeholder="Duyurunu yaz..."
               placeholderTextColor="#6b6450"
               multiline
               editable={!bulkSending}
@@ -641,7 +770,7 @@ export default function ManagementScreen() {
                   className="text-on-surface-variant"
                   style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, letterSpacing: 1 }}
                 >
-                  CANCEL
+                  İPTAL
                 </Text>
               </Pressable>
               <Pressable
@@ -656,13 +785,13 @@ export default function ManagementScreen() {
                     className="text-on-primary"
                     style={{ fontFamily: 'Lexend_700Bold', fontSize: 13, letterSpacing: 1 }}
                   >
-                    SEND
+                    GÖNDER
                   </Text>
                 )}
               </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Add Member modal */}
@@ -678,25 +807,25 @@ export default function ManagementScreen() {
               className="text-on-background"
               style={{ fontFamily: 'Lexend_800ExtraBold', fontSize: 22, letterSpacing: -0.3 }}
             >
-              Add a Member
+              Üye ekle
             </Text>
             <Text
               className="mt-1 text-on-surface-variant"
               style={{ fontFamily: 'Inter_400Regular', fontSize: 12 }}
             >
-              A unique access key will be generated automatically.
+              Özel giriş anahtarı otomatik oluşturulacak.
             </Text>
 
             <Text
               className="mb-2 mt-5 text-on-surface-variant"
               style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1.5 }}
             >
-              FULL NAME *
+              AD SOYAD *
             </Text>
             <TextInput
               value={newName}
               onChangeText={setNewName}
-              placeholder="e.g. Ada Lovelace"
+              placeholder="Örn. Ada Lovelace"
               placeholderTextColor="#6b6450"
               editable={!creating}
               className="rounded-sm border border-outline-variant bg-surface-container-low px-4 py-3 text-on-background"
@@ -707,7 +836,7 @@ export default function ManagementScreen() {
               className="mb-2 mt-4 text-on-surface-variant"
               style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1.5 }}
             >
-              EMAIL (OPTIONAL)
+              E-POSTA (OPSİYONEL)
             </Text>
             <TextInput
               value={newEmail}
@@ -725,12 +854,12 @@ export default function ManagementScreen() {
               className="mb-2 mt-4 text-on-surface-variant"
               style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1.5 }}
             >
-              ROLE
+              ROL
             </Text>
             <View className="flex-row gap-2">
               {[
-                { v: ROLE.Member, l: 'MEMBER' },
-                { v: ROLE.PT, l: 'TRAINER' },
+                { v: ROLE.Member, l: 'ÜYE' },
+                { v: ROLE.PT, l: 'ANTRENÖR' },
               ].map((r) => {
                 const active = newRole === r.v;
                 return (
@@ -783,7 +912,7 @@ export default function ManagementScreen() {
                   className="text-on-surface-variant"
                   style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, letterSpacing: 1 }}
                 >
-                  CANCEL
+                  İPTAL
                 </Text>
               </Pressable>
               <Pressable
@@ -800,7 +929,7 @@ export default function ManagementScreen() {
                       className="ml-1.5 text-on-primary"
                       style={{ fontFamily: 'Lexend_700Bold', fontSize: 13, letterSpacing: 1 }}
                     >
-                      GENERATE KEY
+                      ANAHTAR OLUŞTUR
                     </Text>
                   </>
                 )}
@@ -834,13 +963,13 @@ export default function ManagementScreen() {
               className="mt-4 text-on-background"
               style={{ fontFamily: 'Lexend_900Black', fontSize: 20, letterSpacing: 1 }}
             >
-              MEMBER CREATED
+              ÜYE OLUŞTURULDU
             </Text>
             <Text
               className="mt-1 text-on-surface-variant text-center"
               style={{ fontFamily: 'Inter_400Regular', fontSize: 13 }}
             >
-              Share this access key with{' '}
+              Bu giriş anahtarını paylaş:{' '}
               <Text
                 className="text-on-background"
                 style={{ fontFamily: 'Inter_600SemiBold' }}
@@ -882,7 +1011,7 @@ export default function ManagementScreen() {
                   color: keyCopied ? '#86efac' : '#facc15',
                 }}
               >
-                {keyCopied ? 'COPIED' : 'COPY KEY'}
+                {keyCopied ? 'KOPYALANDI' : 'ANAHTARI KOPYALA'}
               </Text>
             </Pressable>
 
@@ -894,12 +1023,141 @@ export default function ManagementScreen() {
                 className="text-on-primary"
                 style={{ fontFamily: 'Lexend_700Bold', fontSize: 13, letterSpacing: 1.5 }}
               >
-                DONE
+                TAMAM
               </Text>
             </Pressable>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+function AdminStat({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+}) {
+  return (
+    <View className="flex-1 rounded-sm border border-outline-variant bg-surface-container p-3">
+      <View className="flex-row items-center justify-between">
+        <Text
+          className="text-on-surface-variant"
+          style={{ fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1 }}
+        >
+          {label.toUpperCase()}
+        </Text>
+        <Ionicons name={icon} size={15} color="#facc15" />
+      </View>
+      <Text
+        className="mt-1 text-on-background"
+        style={{ fontFamily: 'Lexend_900Black', fontSize: 24, lineHeight: 28 }}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function SegmentButton({
+  active,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`flex-1 items-center rounded-sm px-2 py-2 ${
+        active ? 'bg-primary' : 'active:bg-surface-container-high'
+      }`}
+    >
+      <Text
+        className={active ? 'text-on-primary' : 'text-on-surface-variant'}
+        style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.6 }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function AppointmentCard({ appointment }: { appointment: AppointmentDto }) {
+  const start = new Date(appointment.slotStart || appointment.appointmentDate);
+  const end = new Date(appointment.slotEnd || appointment.appointmentDate);
+  const date = start.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const time = `${start.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  })} - ${end.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  })}`;
+
+  return (
+    <View className="rounded-sm border border-outline-variant bg-surface-container p-4">
+      <View className="mb-3 flex-row items-start justify-between">
+        <View className="flex-1 pr-3">
+          <Text
+            className="text-primary"
+            style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.2 }}
+          >
+            {date.toUpperCase()}
+          </Text>
+          <Text
+            className="mt-1 text-on-background"
+            style={{ fontFamily: 'Lexend_800ExtraBold', fontSize: 20, lineHeight: 24 }}
+          >
+            {time}
+          </Text>
+        </View>
+        <View className="rounded-sm bg-primary/15 px-2 py-1">
+          <Text className="text-xs font-bold text-primary">{appointment.status}</Text>
+        </View>
+      </View>
+
+      <View className="gap-2">
+        <DetailLine icon="barbell" label="PT" value={appointment.ptName} />
+        <DetailLine icon="person" label="Üye" value={appointment.memberName} />
+        <DetailLine icon="mail" label="E-posta" value={appointment.memberEmail || '-'} />
+        <DetailLine icon="call" label="Telefon" value={appointment.memberPhoneNumber || '-'} />
+        <DetailLine
+          icon="flash"
+          label="Kalan kredi"
+          value={String(appointment.memberRemainingCredits)}
+        />
+      </View>
+    </View>
+  );
+}
+
+function DetailLine({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  value: string;
+}) {
+  return (
+    <View className="flex-row items-center">
+      <Ionicons name={icon} size={14} color="#facc15" />
+      <Text className="ml-2 w-24 text-xs text-on-surface-variant">{label}</Text>
+      <Text className="flex-1 text-sm font-semibold text-on-background" numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
   );
 }

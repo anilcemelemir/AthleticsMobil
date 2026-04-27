@@ -7,7 +7,23 @@ env: export EXPO_PUBLIC_API_URL
 Starting project at C:\Users\krhn1\Desktop\PROJECTS FOLDER\AthleticsMobil\Mobile\GymSyncMobile
 Starting Metro Bundler
 The following packages should be updated for best compatibility with the installed expo version:
+  expo@54.0.33 - expected version: ~54.0.34
+  expo-linking@8.0.11 - expected version: ~8.0.12
   expo-secure-store@55.0.13 - expected version: ~15.0.8
+  expo-web-browser@15.0.10 - expected version: ~15.0.11
 Your project may not work correctly until you install the expected versions of the packages.
 Waiting on http://localhost:8083
 Logs for your project will appear below.
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.3% (533/627)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 76.1% (568/651)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 86.4% ( 930/1023)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 84.8% (1066/1173)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.4% (1476/1549)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 94.8% (1647/1692)
+λ Bundled 11499ms node_modules\expo-router\node\render.js (1727 modules)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1657/1657)
+Web Bundled 14219ms node_modules\expo-router\entry.js (1657 modules)
+Error: Premature close
+    at onclose (node:internal/streams/end-of-stream:162:30)
+    at processTicksAndRejections (node:internal/process/task_queues:85:11)

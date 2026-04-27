@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import ManagementScreen from '@/components/ManagementScreen';
 import PTDashboardScreen from '@/components/PTDashboardScreen';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,8 +11,8 @@ import { ROLE } from '@/lib/api';
 
 const ROLE_NAMES: Record<number, string> = {
   0: 'Admin',
-  1: 'Personal Trainer',
-  2: 'Member',
+  1: 'Kişisel Antrenör',
+  2: 'Üye',
 };
 
 export default function HomeTabScreen() {
@@ -51,6 +52,7 @@ function DashboardScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
+      <AthletixHeader />
       <ScrollView
         contentContainerClassName="px-5 pb-10"
         refreshControl={
@@ -61,17 +63,7 @@ function DashboardScreen() {
           />
         }
       >
-        {/* Brand header */}
-        <View className="mt-2 mb-6 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="flash" size={20} color="#facc15" />
-            <Text
-              className="text-on-background"
-              style={{ fontFamily: 'Lexend_900Black', letterSpacing: 1.5, fontSize: 16 }}
-            >
-              IRON PULSE
-            </Text>
-          </View>
+        <View className="mb-6 mt-5 flex-row justify-end">
           <View className="rounded-sm border border-outline-variant bg-surface-container px-2 py-1">
             <Text
               className="text-on-surface-variant"
@@ -88,7 +80,7 @@ function DashboardScreen() {
             className="text-on-surface-variant"
             style={{ fontFamily: 'Inter_400Regular', fontSize: 13 }}
           >
-            Welcome back,
+            Tekrar hoş geldin,
           </Text>
           <Text
             className="text-on-background"
@@ -119,7 +111,7 @@ function DashboardScreen() {
               className="text-on-primary"
               style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 2 }}
             >
-              CREDITS REMAINING
+              KALAN KREDİ
             </Text>
             <Ionicons name="flash" size={18} color="#3c2f00" />
           </View>
@@ -138,7 +130,7 @@ function DashboardScreen() {
             className="text-on-primary/80"
             style={{ fontFamily: 'Inter_500Medium', fontSize: 13 }}
           >
-            of {user.totalCredits} total sessions
+            toplam {user.totalCredits} seans
           </Text>
 
           {/* Progress bar */}
@@ -153,15 +145,15 @@ function DashboardScreen() {
         {/* Bento grid */}
         <View className="mb-3 flex-row gap-3">
           <BentoCard
-            label="USED"
+            label="KULLANILAN"
             value={String(used)}
-            sub="sessions"
+            sub="seans"
             icon="checkmark-done"
           />
           <BentoCard
-            label="STREAK"
+            label="SERİ"
             value="0"
-            sub="this week"
+            sub="bu hafta"
             icon="trending-up"
           />
         </View>
@@ -172,10 +164,10 @@ function DashboardScreen() {
             className="mb-4 text-on-background"
             style={{ fontFamily: 'Lexend_700Bold', fontSize: 16 }}
           >
-            Account
+            Hesap
           </Text>
-          <InfoRow label="Email" value={user.email} />
-          <InfoRow label="Member since" value={new Date(user.createdAt).toLocaleDateString()} isLast />
+          <InfoRow label="E-posta" value={user.email} />
+          <InfoRow label="Kayıt tarihi" value={new Date(user.createdAt).toLocaleDateString()} isLast />
         </View>
       </ScrollView>
     </SafeAreaView>

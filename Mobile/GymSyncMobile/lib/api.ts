@@ -10,7 +10,7 @@ function resolveApiBaseUrl(): string {
   const override = process.env.EXPO_PUBLIC_API_URL;
   if (override) return override;
 
-  return 'http://192.168.1.76:5159';
+  return 'http://192.168.1.30:5159';
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
@@ -129,6 +129,11 @@ export interface AssignCreditsResponse {
 
 export async function getMembers(): Promise<UserDto[]> {
   const { data } = await api.get<UserDto[]>('/api/users/members');
+  return data;
+}
+
+export async function getTrainerUsers(): Promise<UserDto[]> {
+  const { data } = await api.get<UserDto[]>('/api/users/trainers');
   return data;
 }
 

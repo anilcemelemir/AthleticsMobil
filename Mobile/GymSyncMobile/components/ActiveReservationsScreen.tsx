@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AthletixHeader } from '@/components/AthletixHeader';
 import { getMyAppointments, type AppointmentDto } from '@/lib/api';
 
 function formatDate(iso: string): string {
@@ -41,7 +42,7 @@ export default function ActiveReservationsScreen() {
       const res = await getMyAppointments();
       setAppointments(res);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load reservations.');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Rezervasyonlar yüklenemedi.');
     }
   }, []);
 
@@ -80,22 +81,14 @@ export default function ActiveReservationsScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-black">
-      <View className="flex-row items-center justify-between border-b border-outline-variant px-5 py-4">
-        <View className="flex-row items-center gap-4">
-          <Pressable onPress={() => router.back()} className="active:opacity-70">
-            <Ionicons name="arrow-back" size={24} color="#facc15" />
-          </Pressable>
-          <Text
-            className="text-xl text-primary"
-            style={{ fontFamily: 'Lexend_900Black', letterSpacing: 0 }}
-          >
-            RESERVATIONS
-          </Text>
-        </View>
-        <View className="h-10 w-10 items-center justify-center rounded-sm border border-primary bg-surface-container">
-          <Ionicons name="calendar" size={18} color="#facc15" />
-        </View>
-      </View>
+      <AthletixHeader
+        onBack={() => router.back()}
+        right={
+          <View className="h-10 w-10 items-center justify-center rounded-sm border border-primary bg-surface-container">
+            <Ionicons name="calendar" size={18} color="#facc15" />
+          </View>
+        }
+      />
 
       <FlatList
         data={activeReservations}
@@ -111,15 +104,15 @@ export default function ActiveReservationsScreen() {
               className="text-3xl text-on-background"
               style={{ fontFamily: 'Lexend_800ExtraBold', lineHeight: 36 }}
             >
-              Active Reservations
+              Aktif Rezervasyonlar
             </Text>
             <Text className="mt-1 text-sm text-on-surface-variant">
-              Upcoming bookings that have not passed yet.
+              Saati geçmemiş yaklaşan rezervasyonların.
             </Text>
 
             <View className="mt-4 self-start rounded-sm bg-primary px-3 py-1">
               <Text className="text-xs font-bold text-on-primary">
-                {activeReservations.length} ACTIVE
+                {activeReservations.length} AKTİF
               </Text>
             </View>
 
@@ -134,10 +127,10 @@ export default function ActiveReservationsScreen() {
           <View className="mt-10 items-center border border-outline-variant bg-surface-container-lowest p-8">
             <Ionicons name="calendar-clear-outline" size={44} color="#9a9078" />
             <Text className="mt-3 text-base font-bold text-on-background">
-              No active reservations
+              Aktif rezervasyon yok
             </Text>
             <Text className="mt-1 text-center text-sm text-on-surface-variant">
-              Book a trainer to see your upcoming sessions here.
+              Yaklaşan seanslarını burada görmek için bir antrenör rezerve et.
             </Text>
           </View>
         }
@@ -160,7 +153,7 @@ function ReservationRow({ appointment }: { appointment: AppointmentDto }) {
       </View>
       <View className="flex-1">
         <Text className="text-xs font-bold uppercase tracking-tight text-primary">
-          Booked Trainer
+          Rezerve Edilen Antrenör
         </Text>
         <Text className="text-lg font-bold text-on-background" numberOfLines={1}>
           {appointment.ptName}
@@ -176,3 +169,4 @@ function ReservationRow({ appointment }: { appointment: AppointmentDto }) {
     </View>
   );
 }
+
