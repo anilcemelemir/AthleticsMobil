@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GymSync.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+071f1283697e7a29dd43cf3bbf37d8fe2eade136")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+59bcd01f92c9ef002e09b5505336cef34418fd31")]
 [assembly: System.Reflection.AssemblyProductAttribute("GymSync.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GymSync.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

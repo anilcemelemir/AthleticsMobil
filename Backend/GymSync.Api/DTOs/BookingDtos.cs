@@ -34,6 +34,11 @@ public class SetSlotsResponseDto
     public List<AvailabilityDto> Slots { get; set; } = new();
 }
 
+public class SetSlotBookedDto
+{
+    public bool IsBooked { get; set; }
+}
+
 public class BookAppointmentDto
 {
     [Required]

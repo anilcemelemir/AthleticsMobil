@@ -163,6 +163,77 @@ public class AvailabilityController : ControllerBase
     }
 
     /// <summary>
+    /// Delete one of the current PT's own slots. Cannot delete a slot that
+    /// has been booked by a member (would orphan the appointment).
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "PT")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteSlot(int id)
+    {
+        var ptId = GetUserId();
+        if (ptId is null)
+            return Unauthorized();
+
+        var slot = await _db.Availabilities.FirstOrDefaultAsync(a => a.Id == id && a.PTId == ptId);
+        if (slot is null)
+            return NotFound(new { message = "Slot not found." });
+
+        // If a real member appointment exists for this slot, refuse to delete.
+        var hasAppointment = await _db.Appointments.AnyAsync(a => a.AvailabilityId == id);
+        if (slot.IsBooked && hasAppointment)
+            return Conflict(new { message = "Cannot delete a slot booked by a member." });
+
+        _db.Availabilities.Remove(slot);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    /// <summary>
+    /// PT manually toggles a slot's booked/blocked status (e.g. personal break).
+    /// Only allowed when no real member appointment is linked to this slot.
+    /// </summary>
+    [HttpPatch("{id:int}/booked")]
+    [Authorize(Roles = "PT")]
+    [ProducesResponseType(typeof(AvailabilityDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SetSlotBooked(int id, [FromBody] SetSlotBookedDto dto)
+    {
+        var ptId = GetUserId();
+        if (ptId is null)
+            return Unauthorized();
+
+        var slot = await _db.Availabilities.FirstOrDefaultAsync(a => a.Id == id && a.PTId == ptId);
+        if (slot is null)
+            return NotFound(new { message = "Slot not found." });
+
+        var hasAppointment = await _db.Appointments.AnyAsync(a => a.AvailabilityId == id);
+        if (hasAppointment)
+            return Conflict(new { message = "Slot is reserved by a member. Cancel the appointment first." });
+
+        slot.IsBooked = dto.IsBooked;
+        await _db.SaveChangesAsync();
+
+        var ptName = await _db.Users
+            .Where(u => u.Id == ptId)
+            .Select(u => u.FullName)
+            .FirstOrDefaultAsync() ?? string.Empty;
+
+        return Ok(new AvailabilityDto
+        {
+            Id = slot.Id,
+            PTId = slot.PTId,
+            PTName = ptName,
+            SlotStart = slot.SlotStart,
+            SlotEnd = slot.SlotEnd,
+            IsBooked = slot.IsBooked
+        });
+    }
+
+    /// <summary>
     /// Returns a list of all PTs (basic info) for member-facing PT picker.
     /// </summary>
     [HttpGet("trainers")]

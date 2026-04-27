@@ -1,1 +1,11 @@
-{"Version":1,"Hash":"c44TEBHloNXcrksf6k13EmEcJvUAVrz40vTbmZ6eo1s=","Source":"GymSync.Api","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}
+{
+  "Version": 1,
+  "Hash": "8jcEE+jXn244GckG1KZD0IcCfIAM9l4jlR6jfcCZnBw=",
+  "Source": "GymSync.Api",
+  "BasePath": "_content/GymSync.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

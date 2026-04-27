@@ -10,7 +10,7 @@ function resolveApiBaseUrl(): string {
   const override = process.env.EXPO_PUBLIC_API_URL;
   if (override) return override;
 
-  return 'http://192.168.1.107:5159';
+  return 'http://192.168.1.76:5159';
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
@@ -204,6 +204,21 @@ export async function setMySlots(
   const { data } = await api.post<SetSlotsResponse>('/api/availability/set-slots', {
     slots,
   });
+  return data;
+}
+
+export async function deleteMySlot(slotId: number): Promise<void> {
+  await api.delete(`/api/availability/${slotId}`);
+}
+
+export async function setSlotBookedStatus(
+  slotId: number,
+  isBooked: boolean
+): Promise<AvailabilityDto> {
+  const { data } = await api.patch<AvailabilityDto>(
+    `/api/availability/${slotId}/booked`,
+    { isBooked }
+  );
   return data;
 }
 

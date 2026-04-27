@@ -1,64 +1,82 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
-  Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Calendar, type DateData } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
+  deleteMySlot,
   getMyAppointments,
   getMySlots,
   setMySlots,
+  setSlotBookedStatus,
   type AppointmentDto,
   type AvailabilityDto,
 } from '@/lib/api';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
+const SLOT_HOURS = [9, 10, 11, 12, 13, 14, 15, 16]; // 09:00 → 17:00 (1-hour blocks)
 
-function formatDateLabel(d: Date): string {
-  return d.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+const COLORS = {
+  primary: '#facc15',
+  onPrimary: '#3c2f00',
+  background: '#121212',
+  surface: '#1e1e1e',
+  surfaceHigh: '#2a2a2a',
+  outline: '#3a3a3a',
+  textPrimary: '#fafafa',
+  textMuted: '#9a9a9a',
+  bookedBg: '#2a2a2a',
+  bookedBorder: '#4a4a4a',
+};
+
+type SlotStatus = 'empty' | 'available' | 'memberBooked' | 'manualBooked' | 'past';
+
+interface DaySlot {
+  hour: number;
+  slot?: AvailabilityDto;
+  appointment?: AppointmentDto;
+  status: SlotStatus;
 }
 
-function formatTimeLabel(d: Date): string {
-  return d.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function toLocalYmd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function fromYmd(ymd: string): Date {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
+}
+
+function isSameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 export default function MyScheduleScreen() {
   const router = useRouter();
-  const [slots, setSlots] = useState<AvailabilityDto[]>([]);
+  const [slots, setSlotsState] = useState<AvailabilityDto[]>([]);
   const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Default: today at next whole hour.
-  const [pickerDate, setPickerDate] = useState<Date>(() => {
-    const now = new Date();
-    now.setMinutes(0, 0, 0);
-    now.setHours(now.getHours() + 1);
-    return now;
-  });
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(() => toLocalYmd(new Date()));
+  const [pendingHour, setPendingHour] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -67,7 +85,7 @@ export default function MyScheduleScreen() {
         getMySlots(),
         getMyAppointments(),
       ]);
-      setSlots(slotRes);
+      setSlotsState(slotRes);
       setAppointments(appointmentRes);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? err?.message ?? 'Failed to load schedule.');
@@ -88,230 +106,524 @@ export default function MyScheduleScreen() {
     setRefreshing(false);
   }, [load]);
 
-  const onDateChange = (event: DateTimePickerEvent, selected?: Date) => {
-    if (Platform.OS !== 'ios') setShowDatePicker(false);
-    if (event.type === 'dismissed' || !selected) return;
-    setPickerDate((prev) => {
-      const next = new Date(prev);
-      next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
-      return next;
-    });
-  };
-
-  const onTimeChange = (event: DateTimePickerEvent, selected?: Date) => {
-    if (Platform.OS !== 'ios') setShowTimePicker(false);
-    if (event.type === 'dismissed' || !selected) return;
-    setPickerDate((prev) => {
-      const next = new Date(prev);
-      next.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
-      return next;
-    });
-  };
-
-  const handleAdd = async () => {
-    if (pickerDate.getTime() <= Date.now()) {
-      Alert.alert('Invalid time', 'Please choose a future time.');
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const slotEnd = new Date(pickerDate.getTime() + ONE_HOUR_MS);
-      const res = await setMySlots([
-        {
-          slotStart: pickerDate.toISOString(),
-          slotEnd: slotEnd.toISOString(),
-        },
-      ]);
-      if (res.createdCount === 0) {
-        Alert.alert('Already added', 'You already have a slot at that time.');
-      } else {
-        Alert.alert('Slot added', `${formatDateLabel(pickerDate)} at ${formatTimeLabel(pickerDate)}`);
-      }
-      await load();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.message ?? 'Failed to add slot.';
-      Alert.alert('Error', msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const grouped = useMemo(() => slots, [slots]);
+  // Map availabilityId -> appointment (if a member booked it).
   const appointmentsBySlotId = useMemo(() => {
     const map = new Map<number, AppointmentDto>();
-    for (const appointment of appointments) {
-      if (appointment.availabilityId) {
-        map.set(appointment.availabilityId, appointment);
-      }
+    for (const a of appointments) {
+      if (a.availabilityId != null) map.set(a.availabilityId, a);
     }
     return map;
   }, [appointments]);
 
+  // Marked dots on calendar for any day that has slots.
+  const markedDates = useMemo(() => {
+    const result: Record<string, any> = {};
+    for (const s of slots) {
+      const ymd = toLocalYmd(new Date(s.slotStart));
+      if (!result[ymd]) result[ymd] = { marked: true, dotColor: COLORS.primary };
+    }
+    result[selectedDate] = {
+      ...(result[selectedDate] ?? {}),
+      selected: true,
+      selectedColor: COLORS.primary,
+      selectedTextColor: COLORS.onPrimary,
+    };
+    return result;
+  }, [slots, selectedDate]);
+
+  // Build the 09:00 → 16:00 row for the selected day.
+  const daySlots: DaySlot[] = useMemo(() => {
+    const day = fromYmd(selectedDate);
+    const now = new Date();
+
+    return SLOT_HOURS.map<DaySlot>((hour) => {
+      const start = new Date(day);
+      start.setHours(hour, 0, 0, 0);
+
+      const slot = slots.find((s) => {
+        const sStart = new Date(s.slotStart);
+        return (
+          isSameLocalDay(sStart, day) &&
+          sStart.getHours() === hour &&
+          sStart.getMinutes() === 0
+        );
+      });
+
+      const appointment = slot ? appointmentsBySlotId.get(slot.id) : undefined;
+      const inPast = start.getTime() + ONE_HOUR_MS <= now.getTime();
+
+      let status: SlotStatus;
+      if (slot) {
+        if (slot.isBooked && appointment) status = 'memberBooked';
+        else if (slot.isBooked) status = 'manualBooked';
+        else status = 'available';
+      } else {
+        status = inPast ? 'past' : 'empty';
+      }
+
+      return { hour, slot, appointment, status };
+    });
+  }, [selectedDate, slots, appointmentsBySlotId]);
+
+  const selectedDateLabel = useMemo(() => {
+    const d = fromYmd(selectedDate);
+    return d.toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
+  }, [selectedDate]);
+
+  // ---------- Slot actions ----------
+
+  const buildSlotDate = (hour: number): { start: Date; end: Date } => {
+    const start = fromYmd(selectedDate);
+    start.setHours(hour, 0, 0, 0);
+    const end = new Date(start.getTime() + ONE_HOUR_MS);
+    return { start, end };
+  };
+
+  const handleMakeAvailable = async (hour: number) => {
+    const { start, end } = buildSlotDate(hour);
+    if (end.getTime() <= Date.now()) {
+      Alert.alert('Invalid time', 'You cannot create a slot in the past.');
+      return;
+    }
+    try {
+      setPendingHour(hour);
+      await setMySlots([{ slotStart: start.toISOString(), slotEnd: end.toISOString() }]);
+      await load();
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Failed to add slot.');
+    } finally {
+      setPendingHour(null);
+    }
+  };
+
+  const handleMarkBlocked = async (hour: number) => {
+    const { start, end } = buildSlotDate(hour);
+    if (end.getTime() <= Date.now()) {
+      Alert.alert('Invalid time', 'You cannot block a past slot.');
+      return;
+    }
+    try {
+      setPendingHour(hour);
+      const res = await setMySlots([
+        { slotStart: start.toISOString(), slotEnd: end.toISOString() },
+      ]);
+      const created = res.slots[0];
+      if (created) {
+        await setSlotBookedStatus(created.id, true);
+      }
+      await load();
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Failed to block slot.');
+    } finally {
+      setPendingHour(null);
+    }
+  };
+
+  const handleRemoveAvailable = (slot: AvailabilityDto, hour: number) => {
+    Alert.alert(
+      'Remove availability?',
+      `Members will no longer be able to book ${String(hour).padStart(2, '0')}:00.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setPendingHour(hour);
+              await deleteMySlot(slot.id);
+              await load();
+            } catch (err: any) {
+              Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Failed to remove slot.');
+            } finally {
+              setPendingHour(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUnblock = async (slot: AvailabilityDto, hour: number) => {
+    try {
+      setPendingHour(hour);
+      // Unblock = set IsBooked back to false, then delete so it returns to empty.
+      await setSlotBookedStatus(slot.id, false);
+      await deleteMySlot(slot.id);
+      await load();
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.message ?? err?.message ?? 'Failed to unblock slot.');
+    } finally {
+      setPendingHour(null);
+    }
+  };
+
+  const handleSlotTap = (entry: DaySlot) => {
+    if (pendingHour !== null) return;
+    switch (entry.status) {
+      case 'empty':
+        handleMakeAvailable(entry.hour);
+        break;
+      case 'available':
+        if (entry.slot) handleRemoveAvailable(entry.slot, entry.hour);
+        break;
+      case 'memberBooked':
+        if (entry.appointment) {
+          router.push({
+            pathname: '/appointment/[id]',
+            params: { id: String(entry.appointment.id) },
+          });
+        }
+        break;
+      case 'manualBooked':
+        if (entry.slot) {
+          Alert.alert(
+            'Blocked slot',
+            'This slot is marked as unavailable. Unblock it to make it available again.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Unblock',
+                onPress: () => entry.slot && handleUnblock(entry.slot, entry.hour),
+              },
+            ]
+          );
+        }
+        break;
+      case 'past':
+        // No-op for past empty slots.
+        break;
+    }
+  };
+
+  const handleSlotLongPress = (entry: DaySlot) => {
+    if (pendingHour !== null) return;
+    if (entry.status !== 'empty') return;
+    Alert.alert(
+      'Block this slot?',
+      `Mark ${String(entry.hour).padStart(2, '0')}:00 as unavailable (e.g. break, personal). Members won't see it.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: () => handleMarkBlocked(entry.hour),
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <SafeAreaView edges={['top']} className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator size="large" color="#facc15" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <FlatList
-        data={grouped}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerClassName="px-5 pb-10"
-        ItemSeparatorComponent={() => <View className="h-2" />}
+      <ScrollView
+        contentContainerClassName="pb-10"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#facc15" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
         }
-        ListHeaderComponent={
-          <View>
-            <View className="mt-2 mb-4">
-              <Text className="text-sm text-on-surface-variant">Personal Trainer</Text>
-              <Text className="text-3xl font-bold text-on-background">My Schedule</Text>
-            </View>
-
-            {error && (
-              <View className="mb-3 rounded-xl border border-accent-red/40 bg-accent-red/10 p-3">
-                <Text className="text-sm text-accent-red">{error}</Text>
-              </View>
-            )}
-
-            <View className="mb-5 rounded-2xl bg-surface-container p-5 shadow-sm">
-              <Text className="mb-3 text-base font-semibold text-on-background">
-                Add a new slot (1 hour)
-              </Text>
-
-              <View className="mb-3 flex-row gap-3">
-                <Pressable
-                  onPress={() => setShowDatePicker(true)}
-                  className="flex-1 flex-row items-center rounded-xl border border-outline-variant bg-background px-4 py-3"
-                >
-                  <Ionicons name="calendar-outline" size={18} color="#facc15" />
-                  <Text className="ml-2 text-sm font-medium text-on-background">
-                    {formatDateLabel(pickerDate)}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setShowTimePicker(true)}
-                  className="flex-1 flex-row items-center rounded-xl border border-outline-variant bg-background px-4 py-3"
-                >
-                  <Ionicons name="time-outline" size={18} color="#facc15" />
-                  <Text className="ml-2 text-sm font-medium text-on-background">
-                    {formatTimeLabel(pickerDate)}
-                  </Text>
-                </Pressable>
-              </View>
-
-              <Pressable
-                onPress={handleAdd}
-                disabled={submitting}
-                className="items-center rounded-xl bg-primary py-3 active:opacity-80 disabled:opacity-50"
-              >
-                {submitting ? (
-                  <ActivityIndicator color="#3c2f00" />
-                ) : (
-                  <Text className="text-base font-bold text-on-primary">Add slot</Text>
-                )}
-              </Pressable>
-
-              {showDatePicker && (
-                <DateTimePicker
-                  value={pickerDate}
-                  mode="date"
-                  minimumDate={new Date()}
-                  onChange={onDateChange}
-                />
-              )}
-              {showTimePicker && (
-                <DateTimePicker
-                  value={pickerDate}
-                  mode="time"
-                  is24Hour
-                  onChange={onTimeChange}
-                />
-              )}
-            </View>
-
-            <Text className="mb-2 text-base font-semibold text-on-background">
-              Upcoming & past slots
-            </Text>
-          </View>
-        }
-        ListEmptyComponent={
-          <View className="mt-6 items-center">
-            <Ionicons name="calendar-clear-outline" size={48} color="#9a9078" />
-            <Text className="mt-2 text-sm text-on-surface-variant">
-              No slots yet. Add one above.
-            </Text>
-          </View>
-        }
-        renderItem={({ item }) => {
-          const start = new Date(item.slotStart);
-          const end = new Date(item.slotEnd);
-          const inPast = start.getTime() <= Date.now();
-          const appointment = appointmentsBySlotId.get(item.id);
-          const tone = item.isBooked
-            ? { bg: 'bg-accent-green/20', text: 'text-accent-green', label: 'Booked' }
-            : inPast
-              ? { bg: 'bg-surface-container-high', text: 'text-on-surface-variant', label: 'Expired' }
-              : { bg: 'bg-primary/20', text: 'text-primary', label: 'Open' };
-          const Row = item.isBooked && appointment ? Pressable : View;
-          return (
-            <Row
-              {...(item.isBooked && appointment
-                  ? {
-                    onPress: () =>
-                      router.push({
-                        pathname: '/appointment/[id]',
-                        params: { id: String(appointment.id) },
-                      }),
-                    className:
-                      'flex-row items-center rounded-2xl bg-surface-container p-4 shadow-sm active:bg-surface-container-high',
-                  }
-                : {
-                    className: 'flex-row items-center rounded-2xl bg-surface-container p-4 shadow-sm',
-                  })}
+      >
+        {/* Header */}
+        <View className="px-5 pt-2 pb-4">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="flash" size={18} color={COLORS.primary} />
+            <Text
+              className="text-on-background"
+              style={{ fontFamily: 'Lexend_900Black', letterSpacing: 1.5, fontSize: 14 }}
             >
-              <View className="mr-3 h-12 w-12 items-center justify-center rounded-xl bg-surface-container-high">
-                <Text className="text-xs font-semibold text-on-surface-variant">
-                  {start.toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
-                </Text>
-                <Text className="text-base font-bold text-on-background">
-                  {start.getDate()}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-on-background">
-                  {formatTimeLabel(start)} – {formatTimeLabel(end)}
-                </Text>
-                <Text className="text-xs text-on-surface-variant">
-                  {appointment
-                    ? `Reserved by ${appointment.memberName}`
-                    : start.toLocaleDateString(undefined, {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                </Text>
-              </View>
-              <View className="items-end">
-                <View className={`rounded-full px-3 py-1 ${tone.bg}`}>
-                  <Text className={`text-xs font-bold ${tone.text}`}>{tone.label}</Text>
-                </View>
-                {appointment && (
-                  <View className="mt-1 flex-row items-center">
-                    <Text className="mr-1 text-[10px] font-semibold text-primary">DETAILS</Text>
-                    <Ionicons name="chevron-forward" size={14} color="#facc15" />
-                  </View>
-                )}
-              </View>
-            </Row>
-          );
+              IRON PULSE
+            </Text>
+          </View>
+          <Text
+            className="mt-3 text-on-background"
+            style={{
+              fontFamily: 'Lexend_800ExtraBold',
+              fontSize: 28,
+              letterSpacing: -0.5,
+              lineHeight: 32,
+            }}
+          >
+            My Schedule
+          </Text>
+          <Text
+            className="mt-1 text-on-surface-variant"
+            style={{ fontFamily: 'Inter_400Regular', fontSize: 13 }}
+          >
+            Tap a slot to make it available · long-press to block
+          </Text>
+        </View>
+
+        {error && (
+          <View className="mx-5 mb-3 rounded-sm border border-accent-red/40 bg-accent-red/10 p-3">
+            <Text className="text-sm text-accent-red">{error}</Text>
+          </View>
+        )}
+
+        {/* Calendar */}
+        <View className="mx-5 overflow-hidden rounded-sm border border-outline-variant bg-surface-container">
+          <Calendar
+            current={selectedDate}
+            onDayPress={(day: DateData) => setSelectedDate(day.dateString)}
+            markedDates={markedDates}
+            firstDay={1}
+            enableSwipeMonths
+            theme={{
+              calendarBackground: COLORS.surface,
+              backgroundColor: COLORS.surface,
+              dayTextColor: COLORS.textPrimary,
+              monthTextColor: COLORS.textPrimary,
+              textSectionTitleColor: COLORS.textMuted,
+              todayTextColor: COLORS.primary,
+              arrowColor: COLORS.primary,
+              selectedDayBackgroundColor: COLORS.primary,
+              selectedDayTextColor: COLORS.onPrimary,
+              dotColor: COLORS.primary,
+              textDayFontFamily: 'Inter_500Medium',
+              textMonthFontFamily: 'Lexend_700Bold',
+              textDayHeaderFontFamily: 'Inter_600SemiBold',
+              textDayFontSize: 13,
+              textMonthFontSize: 16,
+              textDayHeaderFontSize: 11,
+            }}
+          />
+        </View>
+
+        {/* Selected day label */}
+        <View className="mt-6 px-5">
+          <Text
+            className="text-on-surface-variant"
+            style={{ fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 1.5 }}
+          >
+            SELECTED
+          </Text>
+          <Text
+            className="mt-1 text-on-background"
+            style={{ fontFamily: 'Lexend_700Bold', fontSize: 18 }}
+          >
+            {selectedDateLabel}
+          </Text>
+        </View>
+
+        {/* Slot grid */}
+        <View className="mt-3 flex-row flex-wrap px-3">
+          {daySlots.map((entry) => (
+            <View key={entry.hour} className="w-1/2 p-2">
+              <TimeSlot
+                entry={entry}
+                pending={pendingHour === entry.hour}
+                onPress={() => handleSlotTap(entry)}
+                onLongPress={() => handleSlotLongPress(entry)}
+              />
+            </View>
+          ))}
+        </View>
+
+        {/* Legend */}
+        <View className="mx-5 mt-4 rounded-sm border border-outline-variant bg-surface-container p-4">
+          <Text
+            className="mb-3 text-on-surface-variant"
+            style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.5 }}
+          >
+            LEGEND
+          </Text>
+          <LegendRow color={COLORS.primary} label="Available · members can book" />
+          <LegendRow color={COLORS.surfaceHigh} label="Booked by member · tap for details" outlined />
+          <LegendRow color={COLORS.bookedBg} label="Blocked by you · tap to unblock" outlined />
+          <LegendRow color="transparent" label="Empty · tap to open, long-press to block" outlined isLast />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ---------- TimeSlot component ----------
+
+interface TimeSlotProps {
+  entry: DaySlot;
+  pending: boolean;
+  onPress: () => void;
+  onLongPress: () => void;
+}
+
+function TimeSlot({ entry, pending, onPress, onLongPress }: TimeSlotProps) {
+  const { hour, status, appointment } = entry;
+  const startLabel = `${String(hour).padStart(2, '0')}:00`;
+  const endLabel = `${String(hour + 1).padStart(2, '0')}:00`;
+
+  const visuals = getSlotVisuals(status);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      disabled={pending || status === 'past'}
+      className="min-h-[88px] items-start justify-between rounded-sm border-2 p-3"
+      style={visuals.containerStyle}
+    >
+      <View className="w-full flex-row items-center justify-between">
+        <Text
+          style={{
+            fontFamily: 'Inter_500Medium',
+            fontSize: 13,
+            color: visuals.timeColor,
+            letterSpacing: 0.5,
+          }}
+        >
+          {startLabel} – {endLabel}
+        </Text>
+        {visuals.icon && (
+          <Ionicons name={visuals.icon} size={14} color={visuals.iconColor} />
+        )}
+      </View>
+
+      <View className="w-full flex-row items-center justify-between">
+        <Text
+          style={{
+            fontFamily: 'Inter_600SemiBold',
+            fontSize: 11,
+            color: visuals.labelColor,
+            letterSpacing: 1.2,
+          }}
+        >
+          {pending ? 'WORKING…' : visuals.label}
+        </Text>
+        {pending && <ActivityIndicator size="small" color={visuals.iconColor} />}
+      </View>
+
+      {status === 'memberBooked' && appointment && (
+        <Text
+          numberOfLines={1}
+          style={{
+            fontFamily: 'Inter_400Regular',
+            fontSize: 11,
+            color: COLORS.textMuted,
+          }}
+        >
+          {appointment.memberName}
+        </Text>
+      )}
+    </Pressable>
+  );
+}
+
+// ---------- Visual helpers ----------
+
+interface SlotVisuals {
+  containerStyle: any;
+  timeColor: string;
+  labelColor: string;
+  iconColor: string;
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+}
+
+function getSlotVisuals(status: SlotStatus): SlotVisuals {
+  switch (status) {
+    case 'available':
+      return {
+        containerStyle: {
+          backgroundColor: COLORS.primary,
+          borderColor: COLORS.primary,
+        },
+        timeColor: COLORS.onPrimary,
+        labelColor: COLORS.onPrimary,
+        iconColor: COLORS.onPrimary,
+        icon: 'flash',
+        label: 'AVAILABLE',
+      };
+    case 'memberBooked':
+      return {
+        containerStyle: {
+          backgroundColor: COLORS.surfaceHigh,
+          borderColor: COLORS.outline,
+        },
+        timeColor: COLORS.textPrimary,
+        labelColor: COLORS.primary,
+        iconColor: COLORS.primary,
+        icon: 'person',
+        label: 'BOOKED',
+      };
+    case 'manualBooked':
+      return {
+        containerStyle: {
+          backgroundColor: COLORS.bookedBg,
+          borderColor: COLORS.bookedBorder,
+          borderStyle: 'dashed',
+        },
+        timeColor: COLORS.textMuted,
+        labelColor: COLORS.textMuted,
+        iconColor: COLORS.textMuted,
+        icon: 'lock-closed',
+        label: 'BLOCKED',
+      };
+    case 'past':
+      return {
+        containerStyle: {
+          backgroundColor: 'transparent',
+          borderColor: COLORS.outline,
+          borderStyle: 'dashed',
+          opacity: 0.4,
+        },
+        timeColor: COLORS.textMuted,
+        labelColor: COLORS.textMuted,
+        iconColor: COLORS.textMuted,
+        label: 'PAST',
+      };
+    case 'empty':
+    default:
+      return {
+        containerStyle: {
+          backgroundColor: 'transparent',
+          borderColor: COLORS.outline,
+          borderStyle: 'dashed',
+        },
+        timeColor: COLORS.textPrimary,
+        labelColor: COLORS.textMuted,
+        iconColor: COLORS.textMuted,
+        icon: 'add',
+        label: 'TAP TO OPEN',
+      };
+  }
+}
+
+function LegendRow({
+  color,
+  label,
+  outlined,
+  isLast,
+}: {
+  color: string;
+  label: string;
+  outlined?: boolean;
+  isLast?: boolean;
+}) {
+  return (
+    <View className={`flex-row items-center ${isLast ? '' : 'mb-2'}`}>
+      <View
+        className="mr-3 h-4 w-4 rounded-sm"
+        style={{
+          backgroundColor: color,
+          borderWidth: outlined ? 1 : 0,
+          borderColor: COLORS.outline,
+          borderStyle: outlined && color === 'transparent' ? 'dashed' : 'solid',
         }}
       />
-    </SafeAreaView>
+      <Text
+        className="flex-1 text-on-background"
+        style={{ fontFamily: 'Inter_400Regular', fontSize: 12 }}
+      >
+        {label}
+      </Text>
+    </View>
   );
 }
