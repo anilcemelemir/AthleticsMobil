@@ -206,13 +206,13 @@ function DashboardScreen() {
                 letterSpacing: 1.2,
               }}
             >
-              BODY ANALYTICS
+              VÜCUT ANALİZİ
             </Text>
             <Text
               className="text-on-surface-variant"
               style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2 }}
             >
-              Vücut ölçüleri & gelişim grafikleri
+              Ölçüler & gelişim grafikleri
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#facc15" />

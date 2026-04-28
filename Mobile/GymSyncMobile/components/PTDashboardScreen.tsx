@@ -122,13 +122,7 @@ export default function PTDashboardScreen() {
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-background">
-      <AthletixHeader
-        right={
-          <Pressable className="h-10 w-10 items-center justify-center rounded-sm active:bg-surface-container">
-            <Ionicons name="notifications-outline" size={22} color="#9ca3af" />
-          </Pressable>
-        }
-      />
+      <AthletixHeader />
 
       <ScrollView
         contentContainerClassName="gap-8 px-5 pb-28 pt-6"

@@ -141,6 +141,40 @@ export default function MemberProgramScreen() {
             )}
           </View>
 
+          {/* Quick link to this member's body analytics */}
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/member/[id]/body-analytics',
+                params: { id: String(memberId), name: memberName ?? '' },
+              })
+            }
+            className="mb-4 flex-row items-center rounded-sm border border-primary/40 border-l-4 border-l-primary bg-surface-container p-4 active:bg-surface-container-high"
+          >
+            <View className="mr-3 h-11 w-11 items-center justify-center rounded-sm bg-primary/15">
+              <Ionicons name="analytics" size={20} color="#facc15" />
+            </View>
+            <View className="flex-1">
+              <Text
+                className="text-on-background"
+                style={{
+                  fontFamily: 'Lexend_700Bold',
+                  fontSize: 13,
+                  letterSpacing: 1.2,
+                }}
+              >
+                VÜCUT ANALİZİ
+              </Text>
+              <Text
+                className="text-on-surface-variant"
+                style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2 }}
+              >
+                Üyenin ölçüm geçmişi & gelişimi
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#facc15" />
+          </Pressable>
+
           {error && (
             <View className="mb-4 rounded-sm border border-accent-red/40 bg-accent-red/10 p-3">
               <Text className="text-sm text-accent-red">{error}</Text>

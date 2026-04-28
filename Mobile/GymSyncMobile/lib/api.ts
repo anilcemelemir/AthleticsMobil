@@ -447,6 +447,12 @@ export async function getMyMeasurements(): Promise<BodyMeasurementDto[]> {
   return data;
 }
 
+/** PT/Admin: returns all measurements for a specific member, oldest first. */
+export async function getMeasurementsForUser(userId: number): Promise<BodyMeasurementDto[]> {
+  const { data } = await api.get<BodyMeasurementDto[]>(`/api/bodymeasurements/user/${userId}`);
+  return data;
+}
+
 export async function createMeasurement(
   payload: CreateBodyMeasurementPayload,
 ): Promise<BodyMeasurementDto> {

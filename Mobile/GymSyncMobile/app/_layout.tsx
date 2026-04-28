@@ -125,6 +125,7 @@ function RootLayoutNav() {
         <Stack.Screen name="appointment/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="admin/announcements" options={{ headerShown: false }} />
         <Stack.Screen name="member/[id]/program" options={{ headerShown: false }} />
+        <Stack.Screen name="member/[id]/body-analytics" options={{ headerShown: false }} />
         <Stack.Screen name="program" options={{ headerShown: false }} />
         <Stack.Screen name="body-analytics" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />

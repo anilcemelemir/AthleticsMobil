@@ -99,6 +99,26 @@ public class BodyMeasurementsController : ControllerBase
     }
 
     /// <summary>
+    /// PT/Admin: returns all measurements for a specific member, oldest first.
+    /// </summary>
+    [HttpGet("user/{userId:int}")]
+    [Authorize(Roles = "Admin,PT")]
+    public async Task<IActionResult> GetForUser(int userId)
+    {
+        var member = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId && u.Role == UserRole.Member);
+        if (member is null) return NotFound(new { message = "Member not found." });
+
+        var list = await _db.BodyMeasurements
+            .AsNoTracking()
+            .Where(m => m.UserId == userId)
+            .OrderBy(m => m.MeasuredAt)
+            .ToListAsync();
+
+        return Ok(list.Select(ToDto).ToList());
+    }
+
+    /// <summary>
     /// Deletes one of the current user's measurements.
     /// </summary>
     [HttpDelete("{id:int}")]
