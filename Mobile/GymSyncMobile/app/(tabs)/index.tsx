@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AthletixHeader } from '@/components/AthletixHeader';
@@ -34,6 +35,7 @@ export default function HomeTabScreen() {
 function DashboardScreen() {
   const { user, refreshUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -157,6 +159,35 @@ function DashboardScreen() {
             icon="trending-up"
           />
         </View>
+
+        {/* Programım */}
+        <Pressable
+          onPress={() => router.push('/program')}
+          className="mb-3 flex-row items-center rounded-sm border border-primary/40 border-l-4 border-l-primary bg-surface-container p-4 active:bg-surface-container-high"
+        >
+          <View className="mr-3 h-11 w-11 items-center justify-center rounded-sm bg-primary/15">
+            <Ionicons name="document-text" size={20} color="#facc15" />
+          </View>
+          <View className="flex-1">
+            <Text
+              className="text-on-background"
+              style={{
+                fontFamily: 'Lexend_700Bold',
+                fontSize: 13,
+                letterSpacing: 1.2,
+              }}
+            >
+              PROGRAMIM
+            </Text>
+            <Text
+              className="text-on-surface-variant"
+              style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2 }}
+            >
+              Antrenman & Beslenme planı
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#facc15" />
+        </Pressable>
 
         {/* Account block */}
         <View className="rounded-sm border border-outline-variant bg-surface-container p-5">

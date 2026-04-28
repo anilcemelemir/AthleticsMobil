@@ -459,32 +459,39 @@ export default function BookSessionScreen() {
       </ScrollView>
 
       <View className="absolute bottom-0 left-0 right-0 border-t border-outline-variant bg-black px-5 pb-6 pt-4">
-        <View className="mb-4 flex-row items-center justify-between">
-          <View>
-            <Text className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-              TOPLAM
-            </Text>
-            <Text
-              className="text-2xl text-on-background"
-              style={{ fontFamily: 'Lexend_800ExtraBold' }}
-            >
-              $65.00
-            </Text>
-          </View>
-          <View className="items-end">
-            <Text className="text-xs text-on-surface-variant">SEANS BAŞINA</Text>
-            <Text className="text-xs font-bold text-primary">
-              {user?.remainingCredits ?? 0} KREDİ KALDI
-            </Text>
-          </View>
+        <View className="mb-3 flex-row items-center justify-between">
+          <Text
+            className="text-xs text-on-surface-variant"
+            style={{ fontFamily: 'Inter_400Regular' }}
+          >
+            1 kredi eksilecektir
+          </Text>
+          <Text
+            className="text-xs text-on-surface-variant"
+            style={{ fontFamily: 'Inter_400Regular' }}
+          >
+            Toplam Krediniz:{' '}
+            <Text className="font-bold text-primary">{user?.remainingCredits ?? 0}</Text>
+          </Text>
         </View>
         <Pressable
-          disabled={booking || !selectedSlot}
+          disabled={booking || !selectedSlot || (user?.remainingCredits ?? 0) <= 0}
           onPress={confirmBooking}
-          className="items-center rounded-sm bg-primary py-4 active:scale-[0.99] disabled:opacity-40"
+          className={`items-center rounded-sm py-4 active:scale-[0.99] ${
+            (user?.remainingCredits ?? 0) <= 0
+              ? 'bg-surface-container-high'
+              : 'bg-primary disabled:opacity-40'
+          }`}
         >
           {booking ? (
             <ActivityIndicator color="#3c2f00" />
+          ) : (user?.remainingCredits ?? 0) <= 0 ? (
+            <Text
+              className="text-base text-on-surface-variant"
+              style={{ fontFamily: 'Lexend_800ExtraBold', letterSpacing: 1 }}
+            >
+              YETERSİZ KREDİ
+            </Text>
           ) : (
             <Text
               className="text-xl text-black"

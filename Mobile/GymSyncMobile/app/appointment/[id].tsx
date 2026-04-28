@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,7 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AthletixHeader } from '@/components/AthletixHeader';
-import { getMyAppointments, type AppointmentDto } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { cancelAppointment, getMyAppointments, ROLE, type AppointmentDto } from '@/lib/api';
+
+const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function formatDate(d: Date): string {
   return d.toLocaleDateString(undefined, {
@@ -34,10 +38,12 @@ export default function AppointmentDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const appointmentId = Number(id);
+  const { user, refreshUser } = useAuth();
 
   const [appointment, setAppointment] = useState<AppointmentDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -72,6 +78,48 @@ export default function AppointmentDetailScreen() {
     const end = new Date(appointment.slotEnd || start.getTime() + 60 * 60 * 1000);
     return { start, end };
   }, [appointment]);
+
+  const isMember = user?.role === ROLE.Member;
+  const isOwner = !!user && !!appointment && appointment.memberId === user.id;
+  const isCancelled = appointment?.status === 'Cancelled';
+  const msUntilStart = times ? times.start.getTime() - Date.now() : 0;
+  const isPast = msUntilStart <= 0;
+  const withinCancelWindow = msUntilStart < CANCEL_WINDOW_MS;
+  const canCancel =
+    isMember && isOwner && !isCancelled && !isPast && !withinCancelWindow;
+
+  const handleCancel = useCallback(() => {
+    if (!appointment) return;
+    Alert.alert(
+      'Randevuyu iptal et',
+      'Bu rezervasyonu iptal etmek istediğine emin misin? Kullandığın kredi iade edilecek.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'İptal Et',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setCancelling(true);
+              setError(null);
+              await cancelAppointment(appointment.id);
+              await Promise.all([refreshUser(), load()]);
+              Alert.alert('İptal edildi', 'Randevun iptal edildi ve kredin iade edildi.');
+            } catch (err: any) {
+              const msg =
+                err?.response?.data?.message ??
+                err?.message ??
+                'Randevu iptal edilemedi.';
+              setError(msg);
+              Alert.alert('İptal başarısız', msg);
+            } finally {
+              setCancelling(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [appointment, load, refreshUser]);
 
   if (loading) {
     return (
@@ -152,6 +200,43 @@ export default function AppointmentDetailScreen() {
                 isLast
               />
             </View>
+
+            {isMember && isOwner && !isCancelled && !isPast && (
+              <View className="mt-4">
+                <Pressable
+                  disabled={!canCancel || cancelling}
+                  onPress={handleCancel}
+                  className={`flex-row items-center justify-center rounded-sm border p-4 ${
+                    canCancel && !cancelling
+                      ? 'border-accent-red bg-accent-red/10 active:bg-accent-red/20'
+                      : 'border-outline-variant bg-surface-container opacity-60'
+                  }`}
+                >
+                  {cancelling ? (
+                    <ActivityIndicator color="#f87171" />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="close-circle-outline"
+                        size={18}
+                        color={canCancel ? '#f87171' : '#9a9078'}
+                      />
+                      <Text
+                        className={`ml-2 ${canCancel ? 'text-accent-red' : 'text-on-surface-variant'}`}
+                        style={{ fontFamily: 'Lexend_700Bold', fontSize: 13, letterSpacing: 1 }}
+                      >
+                        REZERVASYONU İPTAL ET
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+                {!canCancel && (
+                  <Text className="mt-2 text-center text-xs text-on-surface-variant">
+                    Randevuya 24 saatten az kaldığı için iptal edilemez.
+                  </Text>
+                )}
+              </View>
+            )}
           </>
         )}
       </ScrollView>

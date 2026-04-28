@@ -124,6 +124,76 @@ public class AppointmentsController : ControllerBase
     }
 
     /// <summary>
+    /// Member cancels their own appointment. Allowed only if more than 24h
+    /// remain before the slot starts. On success: status -> Cancelled,
+    /// availability slot freed, and one credit is refunded to the member.
+    /// </summary>
+    [HttpPost("{id:int}/cancel")]
+    [Authorize(Roles = "Member")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        var memberId = GetUserId();
+        if (memberId is null)
+            return Unauthorized();
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            var appointment = await _db.Appointments
+                .Include(a => a.Availability)
+                .Include(a => a.Member)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment is null)
+                return NotFound(new { message = "Randevu bulunamadı." });
+
+            if (appointment.MemberId != memberId)
+                return Forbid();
+
+            if (appointment.Status == AppointmentStatus.Cancelled)
+                return BadRequest(new { message = "Bu randevu zaten iptal edilmiş." });
+
+            var slotStart = appointment.Availability?.SlotStart ?? appointment.AppointmentDate;
+            var hoursUntil = (slotStart - DateTime.UtcNow).TotalHours;
+            if (hoursUntil < 24)
+                return BadRequest(new
+                {
+                    message = "Randevuya 24 saatten az kaldığı için iptal edilemez."
+                });
+
+            appointment.Status = AppointmentStatus.Cancelled;
+
+            if (appointment.Availability is not null)
+                appointment.Availability.IsBooked = false;
+
+            if (appointment.Member is not null)
+            {
+                appointment.Member.RemainingCredits += 1;
+                appointment.Member.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            return Ok(new
+            {
+                message = "Randevu iptal edildi. Kredin iade edildi.",
+                remainingCredits = appointment.Member?.RemainingCredits ?? 0
+            });
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            _logger.LogError(ex, "Cancellation failed for appointment {AppointmentId}", id);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Returns appointments for the current user (member: own bookings, PT: own clients).
     /// </summary>
     [HttpGet("mine")]

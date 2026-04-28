@@ -13,6 +13,9 @@ public class AppDbContext : DbContext
     public DbSet<Availability> Availabilities => Set<Availability>();
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<AnnouncementDismissal> AnnouncementDismissals => Set<AnnouncementDismissal>();
+    public DbSet<TrainingProgram> TrainingPrograms => Set<TrainingProgram>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -72,6 +75,48 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(m => new { m.SenderId, m.ReceiverId, m.Timestamp });
             entity.HasIndex(m => m.Timestamp);
+        });
+
+        modelBuilder.Entity<Announcement>(entity =>
+        {
+            entity.Property(a => a.TargetRole).HasConversion<string>().HasMaxLength(20);
+
+            entity.HasOne(a => a.CreatedBy)
+                  .WithMany()
+                  .HasForeignKey(a => a.CreatedById)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(a => a.CreatedAt);
+        });
+
+        modelBuilder.Entity<AnnouncementDismissal>(entity =>
+        {
+            entity.HasOne(d => d.Announcement)
+                  .WithMany(a => a.Dismissals)
+                  .HasForeignKey(d => d.AnnouncementId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.User)
+                  .WithMany()
+                  .HasForeignKey(d => d.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(d => new { d.AnnouncementId, d.UserId }).IsUnique();
+        });
+
+        modelBuilder.Entity<TrainingProgram>(entity =>
+        {
+            entity.HasOne(p => p.Member)
+                  .WithMany()
+                  .HasForeignKey(p => p.MemberId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(p => p.AssignedBy)
+                  .WithMany()
+                  .HasForeignKey(p => p.AssignedById)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(p => p.MemberId).IsUnique();
         });
     }
 }

@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -12,7 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AthletixHeader } from '@/components/AthletixHeader';
-import { getMyAppointments, type AppointmentDto } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { cancelAppointment, getMyAppointments, type AppointmentDto } from '@/lib/api';
+
+const CANCEL_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -31,9 +35,11 @@ function formatTime(iso: string): string {
 
 export default function ActiveReservationsScreen() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [appointments, setAppointments] = useState<AppointmentDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -59,6 +65,49 @@ export default function ActiveReservationsScreen() {
     await load();
     setRefreshing(false);
   }, [load]);
+
+  const handleCancel = useCallback(
+    (appointment: AppointmentDto) => {
+      const msUntilStart = new Date(appointment.slotStart).getTime() - Date.now();
+      if (msUntilStart < CANCEL_WINDOW_MS) {
+        Alert.alert(
+          'İptal edilemez',
+          'Randevuya 24 saatten az kaldığı için iptal edilemez.',
+        );
+        return;
+      }
+      Alert.alert(
+        'Randevuyu iptal et',
+        'Bu randevuyu iptal etmek istediğine emin misin? Kullandığın kredi iade edilecek.',
+        [
+          { text: 'Vazgeç', style: 'cancel' },
+          {
+            text: 'İptal Et',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                setCancellingId(appointment.id);
+                setError(null);
+                await cancelAppointment(appointment.id);
+                setAppointments((prev) => prev.filter((a) => a.id !== appointment.id));
+                await refreshUser();
+              } catch (err: any) {
+                const msg =
+                  err?.response?.data?.message ??
+                  err?.message ??
+                  'Randevu iptal edilemedi.';
+                setError(msg);
+                Alert.alert('İptal başarısız', msg);
+              } finally {
+                setCancellingId(null);
+              }
+            },
+          },
+        ],
+      );
+    },
+    [refreshUser],
+  );
 
   const activeReservations = useMemo(
     () =>
@@ -134,37 +183,85 @@ export default function ActiveReservationsScreen() {
             </Text>
           </View>
         }
-        renderItem={({ item }) => <ReservationRow appointment={item} />}
+        renderItem={({ item }) => (
+          <ReservationRow
+            appointment={item}
+            onCancel={handleCancel}
+            cancelling={cancellingId === item.id}
+          />
+        )}
       />
     </SafeAreaView>
   );
 }
 
-function ReservationRow({ appointment }: { appointment: AppointmentDto }) {
+function ReservationRow({
+  appointment,
+  onCancel,
+  cancelling,
+}: {
+  appointment: AppointmentDto;
+  onCancel: (appointment: AppointmentDto) => void;
+  cancelling: boolean;
+}) {
+  const msUntilStart = new Date(appointment.slotStart).getTime() - Date.now();
+  const canCancel = msUntilStart >= CANCEL_WINDOW_MS;
+
   return (
-    <View className="flex-row items-center border-l-4 border-l-primary bg-surface-container p-4">
-      <View className="mr-4 h-16 w-16 items-center justify-center rounded-sm bg-primary">
-        <Text className="text-xs font-bold uppercase text-on-primary">
-          {new Date(appointment.slotStart).toLocaleDateString(undefined, { month: 'short' })}
-        </Text>
-        <Text className="text-2xl font-bold text-on-primary">
-          {new Date(appointment.slotStart).getDate()}
-        </Text>
+    <View className="border-l-4 border-l-primary bg-surface-container p-4">
+      <View className="flex-row items-center">
+        <View className="mr-4 h-16 w-16 items-center justify-center rounded-sm bg-primary">
+          <Text className="text-xs font-bold uppercase text-on-primary">
+            {new Date(appointment.slotStart).toLocaleDateString(undefined, { month: 'short' })}
+          </Text>
+          <Text className="text-2xl font-bold text-on-primary">
+            {new Date(appointment.slotStart).getDate()}
+          </Text>
+        </View>
+        <View className="flex-1">
+          <Text className="text-xs font-bold uppercase tracking-tight text-primary">
+            Rezerve Edilen Antrenör
+          </Text>
+          <Text className="text-lg font-bold text-on-background" numberOfLines={1}>
+            {appointment.ptName}
+          </Text>
+          <Text className="mt-1 text-xs text-on-surface-variant">
+            {formatDate(appointment.slotStart)} / {formatTime(appointment.slotStart)} -{' '}
+            {formatTime(appointment.slotEnd)}
+          </Text>
+        </View>
+        <View className="ml-3 h-10 w-10 items-center justify-center rounded-sm bg-surface-container-high">
+          <Ionicons name="fitness-outline" size={18} color="#facc15" />
+        </View>
       </View>
-      <View className="flex-1">
-        <Text className="text-xs font-bold uppercase tracking-tight text-primary">
-          Rezerve Edilen Antrenör
-        </Text>
-        <Text className="text-lg font-bold text-on-background" numberOfLines={1}>
-          {appointment.ptName}
-        </Text>
-        <Text className="mt-1 text-xs text-on-surface-variant">
-          {formatDate(appointment.slotStart)} / {formatTime(appointment.slotStart)} -{' '}
-          {formatTime(appointment.slotEnd)}
-        </Text>
-      </View>
-      <View className="ml-3 h-10 w-10 items-center justify-center rounded-sm bg-surface-container-high">
-        <Ionicons name="fitness-outline" size={18} color="#facc15" />
+
+      <View className="mt-3 flex-row items-center justify-end border-t border-outline-variant pt-3">
+        <Pressable
+          disabled={cancelling}
+          onPress={() => onCancel(appointment)}
+          hitSlop={8}
+          className={`flex-row items-center rounded-sm px-3 py-2 ${
+            cancelling ? 'opacity-60' : 'active:bg-red-500/10'
+          }`}
+        >
+          {cancelling ? (
+            <ActivityIndicator size="small" color="#ef4444" />
+          ) : (
+            <>
+              <Ionicons
+                name="trash-outline"
+                size={16}
+                color={canCancel ? '#ef4444' : '#9a9078'}
+              />
+              <Text
+                className={`ml-2 text-xs ${canCancel ? 'text-red-500' : 'text-on-surface-variant'}`}
+                style={{ fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}
+              >
+                {canCancel ? 'Randevuyu İptal Et' : 'Son 24 saat — İptal edilemez'}
+              </Text>
+            </>
+          )}
+        </Pressable>
       </View>
     </View>
   );

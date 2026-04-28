@@ -2,15 +2,19 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import { NotificationBell } from '@/components/NotificationBell';
+
 type HeaderAction = React.ReactNode;
 
 interface AthletixHeaderProps {
   left?: HeaderAction;
   right?: HeaderAction;
   onBack?: () => void;
+  /** Hide the auto-rendered notification bell (e.g. on the login screen). */
+  hideNotifications?: boolean;
 }
 
-export function AthletixHeader({ left, right, onBack }: AthletixHeaderProps) {
+export function AthletixHeader({ left, right, onBack, hideNotifications }: AthletixHeaderProps) {
   const leftContent =
     left ??
     (onBack ? (
@@ -36,7 +40,10 @@ export function AthletixHeader({ left, right, onBack }: AthletixHeaderProps) {
           Athletix
         </Text>
       </View>
-      <View className="w-12 items-end">{right ?? <View className="h-10 w-10" />}</View>
+      <View className="min-w-12 flex-row items-center justify-end gap-1">
+        {!hideNotifications && <NotificationBell />}
+        {right}
+      </View>
     </View>
   );
 }

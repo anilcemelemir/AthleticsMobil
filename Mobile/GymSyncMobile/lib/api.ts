@@ -10,7 +10,7 @@ function resolveApiBaseUrl(): string {
   const override = process.env.EXPO_PUBLIC_API_URL;
   if (override) return override;
 
-  return 'http://192.168.1.30:5159';
+  return 'http://192.168.1.14:5159';
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
@@ -239,6 +239,20 @@ export async function getMyAppointments(): Promise<AppointmentDto[]> {
   return data;
 }
 
+export interface CancelAppointmentResponse {
+  message: string;
+  remainingCredits: number;
+}
+
+export async function cancelAppointment(
+  appointmentId: number,
+): Promise<CancelAppointmentResponse> {
+  const { data } = await api.post<CancelAppointmentResponse>(
+    `/api/appointments/${appointmentId}/cancel`,
+  );
+  return data;
+}
+
 // Re-fetch the current user's profile so credits/role stay in sync after mutations.
 export async function getCurrentUser(): Promise<UserDto> {
   const { data } = await api.get<UserDto>('/api/auth/me');
@@ -309,5 +323,96 @@ export async function bulkSendMessage(
     memberIds,
     content,
   });
+  return data;
+}
+
+// ---------- Announcements API ----------
+
+export type AnnouncementAudience = 'All' | 'PT' | 'Member';
+
+export interface AnnouncementDto {
+  id: number;
+  title: string;
+  content: string;
+  /** "All" | "PT" | "Member" */
+  targetAudience: AnnouncementAudience;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface CreateAnnouncementPayload {
+  title: string;
+  content: string;
+  targetAudience: AnnouncementAudience;
+}
+
+export async function getMyAnnouncements(): Promise<AnnouncementDto[]> {
+  const { data } = await api.get<AnnouncementDto[]>('/api/announcements');
+  return data;
+}
+
+export async function dismissAnnouncement(id: number): Promise<void> {
+  await api.post(`/api/announcements/${id}/dismiss`);
+}
+
+export async function getAllAnnouncements(): Promise<AnnouncementDto[]> {
+  const { data } = await api.get<AnnouncementDto[]>('/api/announcements/admin');
+  return data;
+}
+
+export async function createAnnouncement(
+  payload: CreateAnnouncementPayload,
+): Promise<AnnouncementDto> {
+  const { data } = await api.post<AnnouncementDto>('/api/announcements', payload);
+  return data;
+}
+
+export async function deleteAnnouncement(id: number): Promise<void> {
+  await api.delete(`/api/announcements/${id}`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Training programs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TrainingProgramDto {
+  memberId: number;
+  memberName: string;
+  assignedById?: number | null;
+  assignedByName?: string | null;
+  workoutRoutine: string;
+  nutritionPlan: string;
+  updatedAt: string;
+}
+
+export interface UpsertTrainingProgramPayload {
+  workoutRoutine: string;
+  nutritionPlan: string;
+}
+
+/** Member: returns own program, or null if none assigned. */
+export async function getMyProgram(): Promise<TrainingProgramDto | null> {
+  const res = await api.get<TrainingProgramDto>('/api/programs/me', {
+    validateStatus: (s) => s === 200 || s === 204,
+  });
+  if (res.status === 204) return null;
+  return res.data;
+}
+
+/** PT/Admin: returns the program for a specific member (empty payload if none). */
+export async function getProgramForMember(memberId: number): Promise<TrainingProgramDto> {
+  const { data } = await api.get<TrainingProgramDto>(`/api/programs/member/${memberId}`);
+  return data;
+}
+
+/** PT/Admin: assigns or updates a member's program. */
+export async function upsertProgramForMember(
+  memberId: number,
+  payload: UpsertTrainingProgramPayload,
+): Promise<TrainingProgramDto> {
+  const { data } = await api.put<TrainingProgramDto>(
+    `/api/programs/member/${memberId}`,
+    payload,
+  );
   return data;
 }

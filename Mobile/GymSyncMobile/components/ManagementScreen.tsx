@@ -412,6 +412,22 @@ export default function ManagementScreen() {
             <SegmentButton active={adminView === 'trainers'} label="PT'ler" onPress={() => setView('trainers')} />
             <SegmentButton active={adminView === 'appointments'} label="Randevular" onPress={() => setView('appointments')} />
           </View>
+
+          <Pressable
+            onPress={() => router.push('/admin/announcements')}
+            className="mt-3 flex-row items-center justify-between rounded-sm border border-outline-variant bg-surface-container px-4 py-3 active:bg-surface-container-high"
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="megaphone-outline" size={18} color="#facc15" />
+              <Text
+                className="ml-2 text-on-background"
+                style={{ fontFamily: 'Lexend_700Bold', fontSize: 13, letterSpacing: 0.5 }}
+              >
+                Duyuru Yönetimi
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#9a9078" />
+          </Pressable>
         </View>
       )}
 
@@ -540,6 +556,19 @@ export default function ManagementScreen() {
                     className="ml-2 h-9 w-9 items-center justify-center rounded-sm border border-outline-variant bg-surface-container-high"
                   >
                     <Ionicons name="chatbubble-ellipses" size={14} color="#facc15" />
+                  </Pressable>
+                )}
+                {!selectMode && !isTrainer && (isPt || isAdmin) && (
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: '/member/[id]/program',
+                        params: { id: String(item.id), name: item.fullName },
+                      })
+                    }
+                    className="ml-2 h-9 w-9 items-center justify-center rounded-sm border border-outline-variant bg-surface-container-high"
+                  >
+                    <Ionicons name="document-text-outline" size={14} color="#facc15" />
                   </Pressable>
                 )}
                 <View className="ml-2 items-end">
