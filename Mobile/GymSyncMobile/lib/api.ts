@@ -416,3 +416,44 @@ export async function upsertProgramForMember(
   );
   return data;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Body measurements
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BodyMeasurementDto {
+  id: number;
+  measuredAt: string;
+  weightKg?: number | null;
+  fatPercentage?: number | null;
+  shoulderCm?: number | null;
+  chestCm?: number | null;
+  leftArmCm?: number | null;
+  rightArmCm?: number | null;
+  forearmCm?: number | null;
+  waistCm?: number | null;
+  hipsCm?: number | null;
+  leftThighCm?: number | null;
+  rightThighCm?: number | null;
+  calvesCm?: number | null;
+}
+
+export type CreateBodyMeasurementPayload = Omit<BodyMeasurementDto, 'id' | 'measuredAt'> & {
+  measuredAt?: string;
+};
+
+export async function getMyMeasurements(): Promise<BodyMeasurementDto[]> {
+  const { data } = await api.get<BodyMeasurementDto[]>('/api/bodymeasurements/me');
+  return data;
+}
+
+export async function createMeasurement(
+  payload: CreateBodyMeasurementPayload,
+): Promise<BodyMeasurementDto> {
+  const { data } = await api.post<BodyMeasurementDto>('/api/bodymeasurements', payload);
+  return data;
+}
+
+export async function deleteMeasurement(id: number): Promise<void> {
+  await api.delete(`/api/bodymeasurements/${id}`);
+}

@@ -189,6 +189,35 @@ function DashboardScreen() {
           <Ionicons name="chevron-forward" size={20} color="#facc15" />
         </Pressable>
 
+        {/* Body Analytics */}
+        <Pressable
+          onPress={() => router.push('/body-analytics')}
+          className="mb-3 flex-row items-center rounded-sm border border-primary/40 border-l-4 border-l-primary bg-surface-container p-4 active:bg-surface-container-high"
+        >
+          <View className="mr-3 h-11 w-11 items-center justify-center rounded-sm bg-primary/15">
+            <Ionicons name="analytics" size={20} color="#facc15" />
+          </View>
+          <View className="flex-1">
+            <Text
+              className="text-on-background"
+              style={{
+                fontFamily: 'Lexend_700Bold',
+                fontSize: 13,
+                letterSpacing: 1.2,
+              }}
+            >
+              BODY ANALYTICS
+            </Text>
+            <Text
+              className="text-on-surface-variant"
+              style={{ fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2 }}
+            >
+              Vücut ölçüleri & gelişim grafikleri
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#facc15" />
+        </Pressable>
+
         {/* Account block */}
         <View className="rounded-sm border border-outline-variant bg-surface-container p-5">
           <Text
